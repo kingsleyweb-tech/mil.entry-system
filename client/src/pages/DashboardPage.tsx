@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Copy, CheckCheck, ExternalLink, Database, Loader2, Search, ShieldCheck, Users, RefreshCw } from 'lucide-react'
+import { Copy, CheckCheck, ExternalLink, Database, Loader2, Search, ShieldCheck, Users, RefreshCw, ArrowUp } from 'lucide-react'
 import { StatusBadge } from '../components/StatusBadge'
 import { getStats, listPersonnel } from '../services/firebase'
 import type { Personnel, PersonnelStatus, Stats } from '../types/personnel'
@@ -16,6 +16,20 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+  const [showScrollTop, setShowScrollTop] = useState(false)
+
+  // Track scroll position to show/hide "Scroll to Top" button
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   // Generate the registration link dynamically depending on local/hosted env
   const baseUrl = getBaseUrl()
@@ -235,6 +249,16 @@ export function DashboardPage() {
         <Users size={13} />
         Data is stored in Firebase Firestore — real-time and persistent.
       </div>
+
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-slate-950 text-white shadow-lg transition-all hover:bg-slate-800 focus:outline-none cursor-pointer duration-300 hover:-translate-y-1 hover:shadow-xl active:scale-95"
+          title="Scroll to Top"
+        >
+          <ArrowUp size={20} />
+        </button>
+      )}
     </section>
   )
 }

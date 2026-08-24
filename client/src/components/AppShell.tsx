@@ -1,6 +1,6 @@
-import { LayoutDashboard, QrCode, ShieldCheck } from 'lucide-react'
+import { LayoutDashboard, QrCode, ShieldCheck, LogOut } from 'lucide-react'
 import type React from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 
 type Props = {
   children: React.ReactNode
@@ -12,6 +12,13 @@ const nav = [
 ]
 
 export function AppShell({ children }: Props) {
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminToken')
+    navigate('/login')
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
       <header className="border-b border-slate-800 bg-slate-950 text-white">
@@ -47,6 +54,13 @@ export function AppShell({ children }: Props) {
                 </NavLink>
               )
             })}
+            <button
+              onClick={handleLogout}
+              className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-800 transition cursor-pointer"
+            >
+              <LogOut size={17} aria-hidden="true" />
+              Logout
+            </button>
           </nav>
         </div>
       </header>
@@ -54,3 +68,4 @@ export function AppShell({ children }: Props) {
     </div>
   )
 }
+

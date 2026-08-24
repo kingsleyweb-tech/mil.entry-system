@@ -208,3 +208,14 @@ export async function getStats(): Promise<{ stats: Stats }> {
     },
   }
 }
+
+export async function verifyAdminLocal(username: string, password: string): Promise<{ success: boolean; token?: string }> {
+  const allowedUsername = import.meta.env.VITE_DEV_ADMIN_USERNAME || 'SokoAerial'
+  const allowedPassword = import.meta.env.VITE_DEV_ADMIN_PASSWORD || 'soko123'
+
+  if (username.trim().toLowerCase() === allowedUsername.toLowerCase() && password === allowedPassword) {
+    return { success: true, token: `soko-auth-local-${Date.now()}` }
+  }
+  return { success: false }
+}
+
