@@ -241,7 +241,7 @@ export function RegistrationPage() {
             {errors.rank && <span className="text-red-500 text-[10px] font-bold mt-0.5">{errors.rank}</span>}
           </div>
 
-          {/* Unit / Department Selector */}
+          {/* Unit / Department Input */}
           <div className="flex flex-col gap-1.5">
             <label htmlFor="unit" className="text-slate-700 text-xs font-bold flex items-center gap-1">
               Unit / Department <span className="text-red-500">*</span>
@@ -250,25 +250,17 @@ export function RegistrationPage() {
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                 <Building size={16} />
               </div>
-              <select
+              <input
                 id="unit"
+                type="text"
+                placeholder="Enter your unit / department"
                 value={form.unit}
                 onChange={(e) => updateField('unit', e.target.value)}
                 disabled={submitting}
-                className={`w-full bg-white border text-slate-900 text-sm rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 transition duration-200 appearance-none ${
+                className={`w-full bg-white border text-slate-900 text-sm rounded-lg pl-10 pr-4 py-2.5 placeholder-slate-400 focus:outline-none focus:ring-1 transition duration-200 ${
                   errors.unit ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-slate-400 focus:ring-slate-400'
                 }`}
-              >
-                <option value="">Select your unit / department</option>
-                {units.map((u) => (
-                  <option key={u} value={u}>{u}</option>
-                ))}
-              </select>
-              <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
-                <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20">
-                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                </svg>
-              </div>
+              />
             </div>
             {errors.unit && <span className="text-red-500 text-[10px] font-bold mt-0.5">{errors.unit}</span>}
           </div>
