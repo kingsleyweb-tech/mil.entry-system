@@ -79,76 +79,78 @@ export function DashboardPage() {
   }, [load])
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 font-sans">
       {/* ── Page Header ── */}
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between border-b border-slate-200/60 pb-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-950">Entry Control Dashboard</h1>
-          <p className="mt-2 text-slate-600">
-            Monitor registrations, entry status, and verification readiness for{' '}
-            <strong>EXERCISE RESOLUTE SYNERGY 2026</strong>.
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Entry Control Dashboard</h1>
+          <p className="mt-1 text-slate-500 text-sm font-medium">
+            Monitor real-time registrations, entry clearances, and system statistics for{' '}
+            <strong className="text-slate-800">EXERCISE RESOLUTE SYNERGY 2026</strong>.
           </p>
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="flex items-center gap-2.5">
           <button
-            className="secondary-button"
+            className="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50/80 transition duration-150 cursor-pointer disabled:opacity-50 shadow-sm"
             type="button"
             onClick={load}
             disabled={loading}
             title="Refresh data"
           >
-            <RefreshCw size={17} className={loading ? 'animate-spin' : ''} aria-hidden="true" />
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} aria-hidden="true" />
             Refresh
           </button>
-          <a className="primary-button" href="/verify">
-            <ShieldCheck size={18} aria-hidden="true" />
+          <a 
+            className="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white transition duration-150 cursor-pointer shadow-sm shadow-slate-950/10" 
+            href="/verify"
+          >
+            <ShieldCheck size={15} aria-hidden="true" />
             Open Scanner
           </a>
         </div>
       </div>
 
-      {/* ── Registration Link Generator ── */}
-      <div className="link-generator-card">
-        <div className="link-gen-left">
-          <div className="link-gen-icon">
-            <ExternalLink size={20} aria-hidden="true" />
+      {/* ── Registration Link Generator (Enhanced Slate Theme) ── */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="max-w-xl">
+          <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-1">
+            <ExternalLink size={14} />
+            Personnel Registration Link
           </div>
-          <div>
-            <p className="link-gen-title">Personnel Registration Link</p>
-            <p className="link-gen-sub">
-              Copy and share this link with personnel to register for EXERCISE RESOLUTE SYNERGY 2026.
-              They will only see the registration form.
-            </p>
-          </div>
+          <p className="text-slate-300 text-xs sm:text-sm leading-relaxed font-medium">
+            Copy and distribute this link to personnel for the GAF event entry registration. Registered records sync instantly below.
+          </p>
         </div>
-        <div className="link-gen-row">
-          <div className="link-gen-url">
-            <span className="link-gen-url-text">{registrationLink}</span>
+        <div className="w-full md:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+          <div className="bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-xs font-mono text-slate-300 select-all select-text flex items-center justify-center overflow-x-auto min-h-[38px]">
+            {registrationLink}
           </div>
-          <div className="link-gen-actions">
+          <div className="flex gap-2">
             <button
-              className={`link-copy-btn ${copied ? 'copied' : ''}`}
-              type="button"
               onClick={copyLink}
+              className={`px-4 py-2.5 text-xs font-bold rounded-lg cursor-pointer transition-all duration-150 flex items-center justify-center gap-1.5 shrink-0 ${
+                copied 
+                  ? 'bg-emerald-500 text-slate-950 shadow-sm' 
+                  : 'bg-white hover:bg-slate-100 text-slate-950 shadow-sm'
+              }`}
             >
-              {copied
-                ? <><CheckCheck size={16} /> Copied!</>
-                : <><Copy size={16} /> Copy Link</>}
+              {copied ? <CheckCheck size={13} /> : <Copy size={13} />}
+              {copied ? 'Copied' : 'Copy'}
             </button>
             <a
-              className="secondary-button compact"
               href={registrationLink}
               target="_blank"
               rel="noopener noreferrer"
+              className="px-4 py-2.5 text-xs font-bold rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 transition duration-150 flex items-center justify-center gap-1.5 text-white shadow-sm shrink-0"
             >
-              <ExternalLink size={15} /> Open
+              Open
             </a>
           </div>
         </div>
       </div>
 
-      {/* ── Stats ── */}
-      <div className="stats-grid mt-6">
+      {/* ── Stats (Simple Clean Grid) ── */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6">
         <StatCard label="Total Registered" value={stats?.totalRegistered ?? 0} color="blue" />
         <StatCard label="Approved" value={stats?.approved ?? 0} color="green" />
         <StatCard label="Entered" value={stats?.entered ?? 0} color="emerald" />
@@ -156,27 +158,33 @@ export function DashboardPage() {
         <StatCard label="Rejected" value={stats?.rejected ?? 0} color="red" />
       </div>
 
-      {/* ── Personnel Table ── */}
-      <div className="mt-6 rounded-md border border-slate-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-4 border-b border-slate-200 p-4 lg:flex-row lg:items-center lg:justify-between">
-          <label className="relative block lg:w-96">
+      {/* ── Personnel Table Card ── */}
+      <div className="mt-6 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        
+        {/* Table Filters & Search Bar */}
+        <div className="flex flex-col gap-4 border-b border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between bg-slate-50/50">
+          <label className="relative block sm:w-80 w-full">
             <Search
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-              size={18}
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+              size={16}
               aria-hidden="true"
             />
             <input
-              className="control-input pl-10"
+              className="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-lg pl-10 pr-4 py-2.5 placeholder-slate-400 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search name, service number, reg ID, unit…"
+              placeholder="Search by name, service number, unit..."
             />
           </label>
-          <div className="flex gap-2 overflow-x-auto">
+          <div className="flex gap-1.5 overflow-x-auto pb-1 sm:pb-0">
             {filters.map((filter) => (
               <button
                 key={filter}
-                className={`filter-button ${status === filter ? 'active' : ''}`}
+                className={`transition duration-150 border px-3.5 py-1.5 text-xs font-bold rounded-full cursor-pointer shrink-0 ${
+                  status === filter 
+                    ? 'bg-slate-900 border-slate-900 text-white shadow-sm' 
+                    : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-950'
+                }`}
                 type="button"
                 onClick={() => setStatus(filter)}
               >
@@ -187,21 +195,21 @@ export function DashboardPage() {
         </div>
 
         {error ? (
-          <div className="p-6 text-sm font-semibold text-red-700">{error}</div>
+          <div className="p-6 text-sm font-semibold text-red-700 bg-red-50">{error}</div>
         ) : null}
 
         {loading ? (
-          <div className="flex items-center justify-center gap-3 p-12 text-slate-600">
-            <Loader2 className="animate-spin" size={22} aria-hidden="true" />
-            Loading dashboard data from Firebase…
+          <div className="flex items-center justify-center gap-3 p-16 text-slate-500 font-medium text-sm">
+            <Loader2 className="animate-spin text-slate-400" size={20} aria-hidden="true" />
+            Synchronizing with control database…
           </div>
         ) : personnel.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-12 text-center text-slate-600">
-            <Database size={40} className="mb-3 text-slate-400" aria-hidden="true" />
-            <p className="font-semibold text-slate-800">
+          <div className="flex flex-col items-center justify-center p-16 text-center">
+            <Database size={36} className="mb-3 text-slate-300" aria-hidden="true" />
+            <p className="font-bold text-slate-800 text-sm">
               {search.trim() ? `No matching records found for "${search}"` : 'No personnel records found.'}
             </p>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-xs text-slate-500 max-w-sm leading-normal">
               {search.trim()
                 ? 'Check spelling, check code format, or search for another term.'
                 : 'Share the registration link above so personnel can register.'}
@@ -209,30 +217,30 @@ export function DashboardPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="personnel-table">
-              <thead>
+            <table className="w-full text-left text-sm text-slate-600 border-collapse">
+              <thead className="text-[10px] uppercase tracking-wider text-slate-500 bg-slate-50 border-b border-slate-200">
                 <tr>
-                  <th>Name</th>
-                  <th>Service Number</th>
-                  <th>Rank</th>
-                  <th>Unit</th>
-                  <th>Phone</th>
-                  <th>Status</th>
-                  <th>Registered At</th>
-                  <th>Entered At</th>
+                  <th className="px-6 py-3.5 font-bold">Name</th>
+                  <th className="px-6 py-3.5 font-bold">Service Number</th>
+                  <th className="px-6 py-3.5 font-bold">Rank</th>
+                  <th className="px-6 py-3.5 font-bold">Unit</th>
+                  <th className="px-6 py-3.5 font-bold">Phone</th>
+                  <th className="px-6 py-3.5 font-bold">Status</th>
+                  <th className="px-6 py-3.5 font-bold">Registered</th>
+                  <th className="px-6 py-3.5 font-bold">Entered</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-100 bg-white">
                 {personnel.map((person) => (
-                  <tr key={person.id}>
-                    <td>{person.fullName}</td>
-                    <td>{person.serviceNumber}</td>
-                    <td>{person.rank}</td>
-                    <td>{person.unit}</td>
-                    <td>{person.phone}</td>
-                    <td><StatusBadge status={person.status} /></td>
-                    <td>{formatDate(person.registeredAt)}</td>
-                    <td>{formatDate(person.enteredAt)}</td>
+                  <tr key={person.id} className="hover:bg-slate-50/40 transition duration-75">
+                    <td className="px-6 py-4 font-bold text-slate-900">{person.fullName}</td>
+                    <td className="px-6 py-4 font-mono text-xs font-semibold text-slate-700">{person.serviceNumber}</td>
+                    <td className="px-6 py-4 text-xs font-semibold text-slate-500">{person.rank}</td>
+                    <td className="px-6 py-4 text-xs font-semibold text-slate-500">{person.unit}</td>
+                    <td className="px-6 py-4 text-xs font-semibold text-slate-500">{person.phone}</td>
+                    <td className="px-6 py-4"><StatusBadge status={person.status} /></td>
+                    <td className="px-6 py-4 text-xs font-semibold text-slate-400">{formatDate(person.registeredAt)}</td>
+                    <td className="px-6 py-4 text-xs font-semibold text-slate-400">{formatDate(person.enteredAt)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -240,14 +248,14 @@ export function DashboardPage() {
           </div>
         )}
 
-        <div className="border-t border-slate-200 px-4 py-3 text-right text-sm text-slate-500">
-          {personnel.length} record{personnel.length !== 1 ? 's' : ''} shown
+        <div className="border-t border-slate-200 px-6 py-3.5 text-right text-xs font-bold text-slate-500 bg-slate-50/50">
+          {personnel.length} record{personnel.length !== 1 ? 's' : ''} listed
         </div>
       </div>
 
-      <div className="mt-4 flex items-center gap-2 text-xs text-slate-400">
-        <Users size={13} />
-        Data is stored in Firebase Firestore — real-time and persistent.
+      <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-slate-400">
+        <Users size={14} className="text-slate-300" />
+        Encrypted real-time link with military intelligence control.
       </div>
 
       {showScrollTop && (
@@ -272,20 +280,23 @@ function StatCard({
   value: number
   color: 'blue' | 'green' | 'emerald' | 'amber' | 'red'
 }) {
-  const colorMap: Record<string, string> = {
-    blue: '#1d4ed8',
-    green: '#15803d',
-    emerald: '#059669',
-    amber: '#d97706',
-    red: '#b91c1c',
+  const bgClasses: Record<string, string> = {
+    blue: 'bg-blue-50 text-blue-700 border-blue-100',
+    green: 'bg-green-50 text-green-700 border-green-100',
+    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    amber: 'bg-amber-50 text-amber-700 border-amber-100',
+    red: 'bg-red-50 text-red-700 border-red-100',
   }
+
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-sm font-semibold text-slate-500">{label}</p>
-      <p
-        className="mt-2 text-3xl font-bold"
-        style={{ color: colorMap[color] }}
-      >
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md duration-200">
+      <div className="flex justify-between items-start">
+        <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{label}</p>
+        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wider shrink-0 ${bgClasses[color]}`}>
+          {color === 'emerald' ? 'active' : color}
+        </span>
+      </div>
+      <p className="mt-3 text-3xl font-extrabold text-slate-900 tracking-tight leading-none">
         {value}
       </p>
     </div>
