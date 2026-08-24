@@ -7,22 +7,27 @@ type Res = ServerResponse & {
 }
 
 export default async function handler(req: Req, res: Res) {
+  console.log('[send-sms] handler called, method:', req.method)
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
   const { phone, registrationId } = req.body as { phone: string; registrationId: string }
+  console.log('[send-sms] phone:', phone, '| registrationId:', registrationId)
 
   if (!phone || !registrationId) {
+    console.error('[send-sms] Missing phone or registrationId')
     return res.status(400).json({ error: 'Missing phone or registrationId' })
   }
 
   const apiKey = process.env.VYNFY_API_KEY
   const senderId = process.env.VYNFY_SENDER_ID || 'EXRESOLUTE'
+  console.log('[send-sms] apiKey present:', Boolean(apiKey), '| senderId:', senderId)
 
   if (!apiKey) {
-    console.warn('VYNFY_API_KEY not set – SMS skipped')
-    return res.status(200).json({ ok: true, skipped: true })
+    console.error('[send-sms] VYNFY_API_KEY is not set in Vercel environment variables!')
+    return res.status(500).json({ error: 'VYNFY_API_KEY not configured on server' })
   }
 
   // Normalize phone → Ghana format (233XXXXXXXXX)
@@ -32,30 +37,36 @@ export default async function handler(req: Req, res: Res) {
   } else if (recipient.startsWith('+')) {
     recipient = recipient.substring(1)
   }
+  console.log('[send-sms] normalized recipient:', recipient)
 
   const message = `EXERCISE RESOLUTE SYNERGY 2026: Your registration was successful. Your Unique ID is ${registrationId}. Present your QR code or ID at the entry point.`
 
-  // ── Vynfy SMS API ─────────────────────────────────────────────────────────
-  // Endpoint & format sourced directly from vynfy.com homepage code example
-  const smsRes = await fetch('https://sms.vynfy.com/api/v1/send', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-API-Key': apiKey,                // Correct Vynfy auth header
-    },
-    body: JSON.stringify({
-      sender: senderId,
-      recipients: [recipient],            // Vynfy expects an array
-      message,
-    }),
-  })
+  try {
+    const smsRes = await fetch('https://sms.vynfy.com/api/v1/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': apiKey,
+      },
+      body: JSON.stringify({
+        sender: senderId,
+        recipients: [recipient],
+        message,
+      }),
+    })
 
-  const data = await smsRes.json().catch(() => ({}))
+    const data = await smsRes.json().catch(() => ({}))
+    console.log('[send-sms] Vynfy response status:', smsRes.status, '| body:', JSON.stringify(data))
 
-  if (!smsRes.ok) {
-    console.error('Vynfy SMS error:', smsRes.status, data)
-    return res.status(smsRes.status).json({ error: 'SMS send failed', details: data })
+    if (!smsRes.ok) {
+      console.error('[send-sms] Vynfy rejected the request:', smsRes.status, data)
+      return res.status(smsRes.status).json({ error: 'SMS send failed', details: data })
+    }
+
+    console.log('[send-sms] SMS sent successfully to:', recipient)
+    return res.status(200).json({ ok: true, data })
+  } catch (err) {
+    console.error('[send-sms] Fetch error calling Vynfy:', err)
+    return res.status(500).json({ error: 'Failed to reach Vynfy API', details: String(err) })
   }
-
-  return res.status(200).json({ ok: true, data })
 }
