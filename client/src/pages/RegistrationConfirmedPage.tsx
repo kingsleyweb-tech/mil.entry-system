@@ -20,7 +20,7 @@ export function RegistrationConfirmedPage() {
       setLoading(true)
       setError('')
       try {
-        // 1. Fetch personnel details first
+
         const response = await getPersonnel(registrationId)
         setPersonnel(response.personnel)
 

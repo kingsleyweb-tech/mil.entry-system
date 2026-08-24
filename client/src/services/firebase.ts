@@ -66,10 +66,15 @@ async function sendSms(phone: string, registrationId: string) {
 }
 
 export async function registerPersonnel(form: PersonnelForm): Promise<{ personnel: Personnel }> {
-  // Validate duplicate service number to prevent double registration
-  const dupQ = query(collection(db, COLLECTION), where('serviceNumber', '==', form.serviceNumber.trim().toUpperCase()))
-  const dupSnap = await getDocs(dupQ)
-  if (!dupSnap.empty) throw new Error('A personnel record with this service number already exists.')
+  // Check for duplicate service number
+  const dupSvcQ = query(collection(db, COLLECTION), where('serviceNumber', '==', form.serviceNumber.trim().toUpperCase()))
+  const dupSvcSnap = await getDocs(dupSvcQ)
+  if (!dupSvcSnap.empty) throw new Error('A personnel record with this service number already exists.')
+
+  // Check for duplicate email address
+  const dupEmailQ = query(collection(db, COLLECTION), where('email', '==', form.email.trim().toLowerCase()))
+  const dupEmailSnap = await getDocs(dupEmailQ)
+  if (!dupEmailSnap.empty) throw new Error('This email address has already been used to register.')
 
   const registrationId = generateRegistrationId()
   const now = new Date().toISOString()
