@@ -1,6 +1,12 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
+import type { IncomingMessage, ServerResponse } from 'http'
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+type Req = IncomingMessage & { body: Record<string, string> }
+type Res = ServerResponse & {
+  status: (code: number) => Res
+  json: (data: unknown) => void
+}
+
+export default async function handler(req: Req, res: Res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
