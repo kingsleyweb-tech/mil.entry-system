@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import type React from 'react'
-import { useNavigate } from 'react-navigate' // wait, using react-router-dom!
-import { useNavigate as useDomNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { 
   User, 
   FileText, 
@@ -94,7 +93,7 @@ export function RegistrationPage() {
   const [errors, setErrors] = useState<Errors>({})
   const [submitting, setSubmitting] = useState(false)
   const [globalError, setGlobalError] = useState('')
-  const navigate = useDomNavigate()
+  const navigate = useNavigate()
 
   const updateField = (field: keyof PersonnelForm, value: string) => {
     setForm((c) => ({ ...c, [field]: value }))
