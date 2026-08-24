@@ -21,14 +21,14 @@ export default async function handler(req: Req, res: Res) {
     return res.status(400).json({ error: 'Missing phone or registrationId' })
   }
 
-  // Load configuration (supports both Vynfy and new SMS env variables)
-  const apiKey = process.env.SMS_API_KEY || process.env.VYNFY_API_KEY
-  const senderId = process.env.SMS_SENDER_ID || process.env.VYNFY_SENDER_ID || 'EXRESOLUTE'
+  // Load configuration from environment variables
+  const apiKey = process.env.SMS_API_KEY
+  const senderId = process.env.SMS_SENDER_ID || 'EXRESOLUTE'
   console.log('[send-sms] apiKey present:', Boolean(apiKey), '| senderId:', senderId)
 
   if (!apiKey) {
-    console.error('[send-sms] SMS API Key is not set in environment variables!')
-    return res.status(500).json({ error: 'SMS API Key not configured on server' })
+    console.error('[send-sms] SMS_API_KEY is not set in environment variables!')
+    return res.status(500).json({ error: 'SMS_API_KEY not configured on server' })
   }
 
   // Normalize phone → Ghana format (233XXXXXXXXX)
