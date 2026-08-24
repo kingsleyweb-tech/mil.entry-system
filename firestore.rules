@@ -1,0 +1,38 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -- Personnel collection ----------------------------------
+    // Allow public read and write so that:
+    //   - Personnel can self-register (create)
+    //   - The verify/check-in page can read and update records
+    //   - The admin dashboard can list all records
+    match /personnel/{docId} {
+
+      // Anyone can read a personnel document (needed for QR verification)
+      allow read: if true;
+
+      // Anyone can create a new registration
+      allow create: if
+        request.resource.data.keys().hasAll([
+          'fullName', 'serviceNumber', 'registrationId',
+          'rank', 'unit', 'phone', 'email', 'status'
+        ]) &&
+        request.resource.data.fullName is string &&
+        request.resource.data.fullName.size() > 0 &&
+        request.resource.data.serviceNumber is string &&
+        request.resource.data.serviceNumber.size() > 0 &&
+        request.resource.data.status == 'REGISTERED';
+
+      // Allow updates (check-in, verification count, status changes)
+      allow update: if
+        !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['registrationId', 'serviceNumber']);
+
+      // Prevent deletion from the client
+      allow delete: if false;
+    }
+
+  }
+}
