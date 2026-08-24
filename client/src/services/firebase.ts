@@ -76,6 +76,11 @@ export async function registerPersonnel(form: PersonnelForm): Promise<{ personne
   const dupEmailSnap = await getDocs(dupEmailQ)
   if (!dupEmailSnap.empty) throw new Error('This email address has already been used to register.')
 
+  // Check for duplicate phone number
+  const dupPhoneQ = query(collection(db, COLLECTION), where('phone', '==', form.phone.trim()))
+  const dupPhoneSnap = await getDocs(dupPhoneQ)
+  if (!dupPhoneSnap.empty) throw new Error('This phone number has already been used to register.')
+
   const registrationId = generateRegistrationId()
   const now = new Date().toISOString()
 
