@@ -53,39 +53,15 @@ function docToPersonnel(id: string, data: any): Personnel {
 }
 
 async function sendSms(phone: string, registrationId: string) {
-  const apiKey = import.meta.env.VITE_VYNFY_API_KEY
-  const senderId = import.meta.env.VITE_VYNFY_SENDER_ID || 'EXRESOLUTE'
-  if (!apiKey) {
-    console.warn('VITE_VYNFY_API_KEY not defined. SMS skipped.')
-    return
-  }
-
-  // Normalize phone number format (remove leading 0 or +, add 233 if needed)
-  let recipient = phone.trim()
-  if (recipient.startsWith('0')) {
-    recipient = '233' + recipient.substring(1)
-  } else if (recipient.startsWith('+')) {
-    recipient = recipient.substring(1)
-  }
-
-  const message = `EXERCISE RESOLUTE SYNERGY 2026: Hello, your registration was successful. Your unique ID is ${registrationId}. Download/print your QR code to gain entry.`
-
   try {
-    await fetch('https://api.vynfy.com/v1/sms/send', {
+    // Call our Vercel serverless function — avoids CORS and keeps the API key server-side
+    await fetch('/api/send-sms', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': apiKey,
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        sender: senderId,
-        recipient: recipient,
-        message: message,
-      }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, registrationId }),
     })
   } catch (error) {
-    console.error('Failed to send SMS:', error)
+    console.error('SMS dispatch failed:', error)
   }
 }
 
