@@ -176,12 +176,15 @@ export async function checkInPersonnel(registrationId: string): Promise<{ messag
 }
 
 export async function listPersonnel(search: string, status: PersonnelStatus | 'ALL'): Promise<{ personnel: Personnel[] }> {
-  let q = query(collection(db, COLLECTION), orderBy('registeredAt', 'desc'))
-  if (status !== 'ALL') {
-    q = query(collection(db, COLLECTION), where('status', '==', status), orderBy('registeredAt', 'desc'))
-  }
+  // Query all documents sorted by registeredAt descending (default Firestore single-field index)
+  const q = query(collection(db, COLLECTION), orderBy('registeredAt', 'desc'))
   const snap = await getDocs(q)
   let list = snap.docs.map((d) => docToPersonnel(d.id, d.data()))
+
+  // Filter by status in-memory to prevent Firestore composite index requirements
+  if (status !== 'ALL') {
+    list = list.filter((p) => p.status === status)
+  }
 
   if (search.trim()) {
     const s = search.trim().toLowerCase().replace(/-/g, '')
