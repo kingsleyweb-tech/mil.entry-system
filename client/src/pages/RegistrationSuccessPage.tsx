@@ -128,10 +128,14 @@ export function RegistrationSuccessPage() {
         <div className="rs-details-card">
           <div className="rs-card-head">
             <ShieldCheck size={18} className="rs-card-head-icon" />
-            <div>
-              <h2 className="rs-card-title">Personnel Details</h2>
-              <code className="rs-reg-id-inline">{personnel.registrationId}</code>
-            </div>
+            <h2 className="rs-card-title">Personnel Details</h2>
+          </div>
+
+          {/* ── Registration Number highlight box ── */}
+          <div style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#15803d' }}>Your Registration Number</span>
+            <code style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', letterSpacing: '0.06em' }}>{personnel.registrationId}</code>
+            <span style={{ fontSize: '0.7rem', color: '#166534', fontWeight: 600 }}>Keep this number safe — you may be asked to quote it at the gate.</span>
           </div>
           <dl className="rs-dl">
             <Row label="Full Name" value={personnel.fullName} />
@@ -158,7 +162,10 @@ export function RegistrationSuccessPage() {
             />
           </div>
 
-          <code className="rs-qr-id-text">{personnel.registrationId}</code>
+          <div style={{ textAlign: 'center', marginBottom: '0.25rem' }}>
+            <span style={{ display: 'block', fontSize: '0.6rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#64748b', marginBottom: '3px' }}>Your Registration Number</span>
+            <code className="rs-qr-id-text">{personnel.registrationId}</code>
+          </div>
 
           <div className="rs-qr-actions">
             <button
