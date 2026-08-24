@@ -14,8 +14,9 @@ This system handles secure self-service registration, instant QR code card gener
 *   **Sleek Print Formatting** — Media query styles isolate only the QR code, Unique ID, and basic details on printed passes, hiding nav links and background colors automatically.
 *   **Command Control Dashboard** — Monitor total stats (Pending, Approved, Entered, Rejected) with search queries and category filters.
 *   **Clean Manual Verification** — Search and check-in personnel at the gate using case-insensitive, hyphen-agnostic matching.
-*   **Secure Admin Sign-In** — Control room dashboard access is protected by env-secured credentials checking (`SokoAerial` / `soko123`).
-*   **Vercel Serverless integration** — Communicates with Firestore, sends Vynfy SMS notifications via serverless APIs, and resolves local networking variables.
+*   **Secure Admin Sign-In** — Control room dashboard access is protected by server-side environment variable credentials, never exposed to the browser.
+*   **SMS Notifications** — Sends instant SMS confirmation to personnel upon registration via the gonlinesites.com SMS gateway.
+*   **Vercel Serverless Integration** — Communicates with Firestore and dispatches SMS notifications via serverless APIs, resolving networking variables securely.
 
 ---
 
