@@ -7,6 +7,7 @@ import { RegistrationConfirmedPage } from './pages/RegistrationConfirmedPage'
 import { VerifyPage } from './pages/VerifyPage'
 import { LoginPage } from './pages/LoginPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { QrPassPage } from './pages/QrPassPage'
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
           path="/registration-confirmed/:registrationId"
           element={<RegistrationConfirmedPage />}
         />
+        <Route path="/pass/:registrationId" element={<QrPassPage />} />
         <Route path="/login" element={<LoginPage />} />
 
         {/* ── Admin routes (with nav shell & protected) ── */}

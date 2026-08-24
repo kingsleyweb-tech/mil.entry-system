@@ -55,7 +55,7 @@ function docToPersonnel(id: string, data: any): Personnel {
 
 async function sendSms(phone: string, registrationId: string) {
   try {
-    const successUrl = `${getBaseUrl()}/registration-success/${registrationId}`
+    const successUrl = `${getBaseUrl()}/pass/${registrationId}`
     // Call our Vercel serverless function — avoids CORS and keeps the API key server-side
     await fetch('/api/send-sms', {
       method: 'POST',
