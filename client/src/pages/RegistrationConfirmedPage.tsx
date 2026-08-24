@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { CheckCircle2, Loader2, AlertTriangle } from 'lucide-react'
 import { getPersonnel, checkInPersonnel } from '../services/firebase'
 import type { Personnel } from '../types/personnel'
+import { StatusBadge } from '../components/StatusBadge'
 import gafLogo from '../assets/gaf.png'
 
 export function RegistrationConfirmedPage() {
@@ -122,7 +123,12 @@ export function RegistrationConfirmedPage() {
               <Row label="Phone" value={personnel.phone} />
               <Row label="Email" value={personnel.email} />
               <Row label="Registration ID" value={personnel.registrationId} />
-              <Row label="Status" value={personnel.status} highlight />
+              <div className="rc-row">
+                <dt>Status</dt>
+                <dd>
+                  <StatusBadge status={personnel.status} />
+                </dd>
+              </div>
             </dl>
           </div>
         )}
