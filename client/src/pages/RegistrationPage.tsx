@@ -95,9 +95,17 @@ export function RegistrationPage() {
             </span>
             <div>
               <h2 className="rp-card-title">Personnel Registration Form</h2>
-              <p className="rp-card-sub">
-                Fill in all required fields marked <b>*</b>. You will receive a QR code after
+            </div>
+          </div>
+
+          {/* Info Banner */}
+          <div className="rp-info-banner">
+            <div>
+              <p className="rp-info-title">Secure Personnel Registration</p>
+              <p className="rp-info-body">
+                Please complete the form below. A unique entrance QR code will be generated on
                 submission — <strong>download or print it</strong> to gain access to the hall.
+                A confirmation SMS containing your entry pass link will also be sent to your phone.
               </p>
             </div>
           </div>
@@ -140,7 +148,7 @@ export function RegistrationPage() {
             <div className="rp-submit-row">
               <p className="rp-security-note">
                 <ShieldCheck size={13} aria-hidden="true" />
-                Your data is stored securely and used solely for event access control.
+                You will receive a confirmation SMS with your entry pass link immediately after registering.
               </p>
               <button className="rp-submit-btn" type="submit" disabled={submitting}>
                 {submitting
