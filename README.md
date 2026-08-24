@@ -50,20 +50,17 @@ VITE_APP_BASE_URL=http://your-local-ip:5173
 
 # Firebase Config Keys
 VITE_FIREBASE_API_KEY=your_firebase_api_key
-VITE_FIREBASE_AUTH_DOMAIN=entry-system-96bb0.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=entry-system-96bb0
-VITE_FIREBASE_STORAGE_BUCKET=entry-system-96bb0.firebasestorage.app
+VITE_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
+VITE_FIREBASE_PROJECT_ID=your_firebase_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
 VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
 VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
 
-# Vynfy SMS (local fallback key)
-VITE_VYNFY_API_KEY=20cd2fae8501443d35355fdf6fa7472c
-VITE_VYNFY_SENDER_ID=EXRESOLUTE
 
 # Local Dev Admin Login credentials (avoids 404s on dev server)
-VITE_DEV_ADMIN_USERNAME=SokoAerial
-VITE_DEV_ADMIN_PASSWORD=soko123
+VITE_DEV_ADMIN_USERNAME=your_dev_admin_username
+VITE_DEV_ADMIN_PASSWORD=your_dev_admin_password
 ```
 
 ### 4. Run Vite Server
@@ -71,38 +68,6 @@ VITE_DEV_ADMIN_PASSWORD=soko123
 npm run dev -- --host
 ```
 
----
-
-## ☁️ Vercel Production Deployment
-
-To deploy this project to production:
-
-### 1. Set Vercel Project Settings
-*   **Framework Preset:** Vite
-*   **Root Directory:** `client`
-*   **Build Command:** `npm run build`
-*   **Output Directory:** `dist`
-
-### 2. Configure Vercel Environment Variables
-Add these keys under your **Vercel Dashboard → Settings → Environment Variables**:
-
-| Variable Name | Description | Value |
-|---|---|---|
-| `VYNFY_API_KEY` | Vynfy SMS API key | `20cd2fae8501443d35355fdf6fa7472c` |
-| `VYNFY_SENDER_ID` | Vynfy SMS sender code | `EXRESOLUTE` |
-| `ADMIN_USERNAME` | Production dashboard login username | `SokoAerial` |
-| `ADMIN_PASSWORD` | Production dashboard login password | `soko123` |
-| `VITE_FIREBASE_API_KEY` | Firebase API key | *(your firebase api key)* |
-| `VITE_FIREBASE_AUTH_DOMAIN` | Firebase domain | `entry-system-96bb0.firebaseapp.com` |
-| `VITE_FIREBASE_PROJECT_ID` | Firebase project name | `entry-system-96bb0` |
-| `VITE_FIREBASE_STORAGE_BUCKET` | Firebase storage | `entry-system-96bb0.firebasestorage.app` |
-| `VITE_FIREBASE_MESSAGING_SENDER_ID` | Firebase sender ID | *(your sender id)* |
-| `VITE_FIREBASE_APP_ID` | Firebase app ID | *(your app id)* |
-| `VITE_FIREBASE_MEASUREMENT_ID` | Firebase analytics ID | *(your measurement id)* |
-
-*Note: Environment variables do **not** use the `VITE_` prefix for serverless security keys (`VYNFY_API_KEY`, `ADMIN_PASSWORD`, etc.) to keep them completely hidden from public browser inspections.*
-
----
 
 ## 📄 License
 
