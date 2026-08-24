@@ -134,7 +134,7 @@ export function RegistrationPage() {
               </label>
               <Field label="Phone Number" value={form.phone} error={errors.phone} required type="tel" onChange={(v) => updateField('phone', v)} />
               <Field label="Email Address" value={form.email} error={errors.email} required type="email" onChange={(v) => updateField('email', v)} />
-              <Field label="Appointment / Position" value={form.appointment} onChange={(v) => updateField('appointment', v)} />
+              <Field label="Appointment / Position (Optional)" value={form.appointment} onChange={(v) => updateField('appointment', v)} />
             </div>
 
             <div className="rp-submit-row">

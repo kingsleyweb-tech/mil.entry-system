@@ -56,23 +56,54 @@ function docToPersonnel(id: string, data: any): Personnel {
 // ── API ───────────────────────────────────────────────────────────────────────
 
 export async function registerPersonnel(form: PersonnelForm): Promise<{ personnel: Personnel }> {
-  // check for duplicate service number
+  // Check for duplicate service number
   const dupQ = query(collection(db, COLLECTION), where('serviceNumber', '==', form.serviceNumber.trim().toUpperCase()))
   const dupSnap = await getDocs(dupQ)
   if (!dupSnap.empty) throw new Error('A personnel record with this service number already exists.')
 
   const registrationId = generateRegistrationId()
-  const docRef = await addDoc(collection(db, COLLECTION), {
-    ...form,
+  const now = new Date().toISOString()
+
+  // Build the document — strip blank optional fields so they don't clutter Firestore
+  const payload: Record<string, unknown> = {
+    fullName: form.fullName.trim(),
     serviceNumber: form.serviceNumber.trim().toUpperCase(),
+    rank: form.rank.trim(),
+    unit: form.unit.trim(),
+    gender: form.gender.trim(),
+    phone: form.phone.trim(),
+    email: form.email.trim().toLowerCase(),
     registrationId,
     status: 'REGISTERED' as PersonnelStatus,
     registeredAt: serverTimestamp(),
     verificationCount: 0,
-  })
+  }
 
-  const snap = await getDoc(docRef)
-  return { personnel: docToPersonnel(snap.id, { ...snap.data(), registrationId }) }
+  // Only include optional fields if they have a value
+  if (form.appointment?.trim()) payload.appointment = form.appointment.trim()
+  if (form.notes?.trim()) payload.notes = form.notes.trim()
+
+  const docRef = await addDoc(collection(db, COLLECTION), payload)
+
+  // Build the personnel object locally — avoids a second round-trip to Firestore
+  const personnel: Personnel = {
+    id: docRef.id,
+    registrationId,
+    fullName: payload.fullName as string,
+    serviceNumber: payload.serviceNumber as string,
+    rank: payload.rank as string,
+    unit: payload.unit as string,
+    gender: payload.gender as string,
+    phone: payload.phone as string,
+    email: payload.email as string,
+    appointment: payload.appointment as string | undefined,
+    notes: payload.notes as string | undefined,
+    status: 'REGISTERED',
+    registeredAt: now,
+    verificationCount: 0,
+  }
+
+  return { personnel }
 }
 
 export async function getPersonnel(registrationId: string): Promise<{ personnel: Personnel }> {
