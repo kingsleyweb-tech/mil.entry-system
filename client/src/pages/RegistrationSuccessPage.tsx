@@ -17,7 +17,6 @@ import {
   Home,
   QrCode,
   FileText,
-  BadgeCent,
 } from 'lucide-react'
 import { getPersonnel } from '../services/firebase'
 import type { Personnel } from '../types/personnel'
