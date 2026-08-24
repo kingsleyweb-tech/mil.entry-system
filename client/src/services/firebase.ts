@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '../firebase'
 import type { Personnel, PersonnelForm, PersonnelStatus, Stats, VerifyResponse } from '../types/personnel'
+import { getBaseUrl } from '../utils/url'
 
 const COLLECTION = 'personnel'
 
@@ -54,11 +55,12 @@ function docToPersonnel(id: string, data: any): Personnel {
 
 async function sendSms(phone: string, registrationId: string) {
   try {
+    const successUrl = `${getBaseUrl()}/registration-success/${registrationId}`
     // Call our Vercel serverless function — avoids CORS and keeps the API key server-side
     await fetch('/api/send-sms', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, registrationId }),
+      body: JSON.stringify({ phone, registrationId, successUrl }),
     })
   } catch (error) {
     console.error('SMS dispatch failed:', error)

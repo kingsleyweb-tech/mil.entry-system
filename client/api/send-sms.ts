@@ -13,8 +13,8 @@ export default async function handler(req: Req, res: Res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { phone, registrationId } = req.body as { phone: string; registrationId: string }
-  console.log('[send-sms] phone:', phone, '| registrationId:', registrationId)
+  const { phone, registrationId, successUrl } = req.body as { phone: string; registrationId: string; successUrl?: string }
+  console.log('[send-sms] phone:', phone, '| registrationId:', registrationId, '| successUrl:', successUrl)
 
   if (!phone || !registrationId) {
     console.error('[send-sms] Missing phone or registrationId')
@@ -40,7 +40,7 @@ export default async function handler(req: Req, res: Res) {
   }
   console.log('[send-sms] normalized recipient:', recipient)
 
-  const message = `EXERCISE RESOLUTE SYNERGY 2026: Your registration was successful. Your Unique ID is ${registrationId}. Present your QR code or ID at the entry point.`
+  const message = `EXERCISE RESOLUTE SYNERGY 2026: Registration successful. Unique ID: ${registrationId}. Download/Print your QR code card here: ${successUrl || ''}`
 
   try {
     // gonlinesites.com SMS Gateway — GET request with query parameters
