@@ -1,7 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
@@ -30,17 +29,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const message = `EXERCISE RESOLUTE SYNERGY 2026: Your registration was successful. Your Unique ID is ${registrationId}. Present your QR code or ID at the entry point.`
 
-  // ── Try Vynfy SMS API ─────────────────────────────────────────────────────
-  const smsRes = await fetch('https://api.vynfy.com/v1/sms/send', {
+  // ── Vynfy SMS API ─────────────────────────────────────────────────────────
+  // Endpoint & format sourced directly from vynfy.com homepage code example
+  const smsRes = await fetch('https://sms.vynfy.com/api/v1/send', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-      'api-key': apiKey,
+      'X-API-Key': apiKey,                // Correct Vynfy auth header
     },
     body: JSON.stringify({
       sender: senderId,
-      recipient,
+      recipients: [recipient],            // Vynfy expects an array
       message,
     }),
   })
@@ -48,7 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const data = await smsRes.json().catch(() => ({}))
 
   if (!smsRes.ok) {
-    console.error('Vynfy SMS error:', data)
+    console.error('Vynfy SMS error:', smsRes.status, data)
     return res.status(smsRes.status).json({ error: 'SMS send failed', details: data })
   }
 
