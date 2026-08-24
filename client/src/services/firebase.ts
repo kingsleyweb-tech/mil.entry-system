@@ -52,7 +52,42 @@ function docToPersonnel(id: string, data: any): Personnel {
   }
 }
 
-// ── API ───────────────────────────────────────────────────────────────────────
+async function sendSms(phone: string, registrationId: string) {
+  const apiKey = import.meta.env.VITE_VYNFY_API_KEY
+  const senderId = import.meta.env.VITE_VYNFY_SENDER_ID || 'EXRESOLUTE'
+  if (!apiKey) {
+    console.warn('VITE_VYNFY_API_KEY not defined. SMS skipped.')
+    return
+  }
+
+  // Normalize phone number format (remove leading 0 or +, add 233 if needed)
+  let recipient = phone.trim()
+  if (recipient.startsWith('0')) {
+    recipient = '233' + recipient.substring(1)
+  } else if (recipient.startsWith('+')) {
+    recipient = recipient.substring(1)
+  }
+
+  const message = `EXERCISE RESOLUTE SYNERGY 2026: Hello, your registration was successful. Your unique ID is ${registrationId}. Download/print your QR code to gain entry.`
+
+  try {
+    await fetch('https://api.vynfy.com/v1/sms/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': apiKey,
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        sender: senderId,
+        recipient: recipient,
+        message: message,
+      }),
+    })
+  } catch (error) {
+    console.error('Failed to send SMS:', error)
+  }
+}
 
 export async function registerPersonnel(form: PersonnelForm): Promise<{ personnel: Personnel }> {
   // Validate duplicate service number to prevent double registration
@@ -83,6 +118,9 @@ export async function registerPersonnel(form: PersonnelForm): Promise<{ personne
   if (form.notes?.trim()) payload.notes = form.notes.trim()
 
   const docRef = await addDoc(collection(db, COLLECTION), payload)
+
+  // Trigger SMS notification asynchronously in the background so it doesn't block the UI
+  sendSms(form.phone, registrationId)
 
   // Build the personnel object locally — avoids a second round-trip to Firestore
   const personnel: Personnel = {
