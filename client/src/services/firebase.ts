@@ -55,7 +55,7 @@ function docToPersonnel(id: string, data: any): Personnel {
 // ── API ───────────────────────────────────────────────────────────────────────
 
 export async function registerPersonnel(form: PersonnelForm): Promise<{ personnel: Personnel }> {
-  // Check for duplicate service number
+  // Validate duplicate service number to prevent double registration
   const dupQ = query(collection(db, COLLECTION), where('serviceNumber', '==', form.serviceNumber.trim().toUpperCase()))
   const dupSnap = await getDocs(dupQ)
   if (!dupSnap.empty) throw new Error('A personnel record with this service number already exists.')
