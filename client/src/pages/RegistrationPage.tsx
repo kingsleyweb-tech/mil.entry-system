@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type React from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -80,11 +80,19 @@ const ArmIcon = ({ arm }: { arm: string }) => {
 }
 
 export function RegistrationPage() {
+  const [pageLoading, setPageLoading] = useState(true)
   const [form, setForm] = useState(initialForm)
   const [errors, setErrors] = useState<Errors>({})
   const [submitting, setSubmitting] = useState(false)
   const [globalError, setGlobalError] = useState('')
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPageLoading(false)
+    }, 1200) // Fast 1.2s loading screen
+    return () => clearTimeout(timer)
+  }, [])
 
   const updateField = (field: keyof PersonnelForm, value: string) => {
     if (field === 'armOfService') {
@@ -117,6 +125,39 @@ export function RegistrationPage() {
   const availableRanks = form.armOfService && form.armOfService !== 'Civilian'
     ? RANKS[form.armOfService] ?? []
     : []
+
+  if (pageLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        {/* Ambient background glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        
+        {/* Spinning emblem container */}
+        <div className="relative flex items-center justify-center mb-6">
+          <div className="absolute w-28 h-28 border-4 border-t-emerald-500 border-r-emerald-500/30 border-b-emerald-500/10 border-l-emerald-500/50 rounded-full animate-spin [animation-duration:1s]" />
+          <div className="absolute w-24 h-24 border border-slate-800 rounded-full" />
+          <img 
+            src={gafLogo} 
+            alt="GAF Emblem" 
+            className="w-14 h-14 object-contain relative z-10 animate-pulse [animation-duration:2s]" 
+          />
+        </div>
+
+        {/* Text descriptions */}
+        <div className="text-center z-10">
+          <span className="text-[10px] tracking-[0.3em] font-black text-emerald-400 uppercase block leading-none">
+            GHANA ARMED FORCES
+          </span>
+          <h2 className="text-white font-extrabold text-sm sm:text-base mt-3.5 uppercase tracking-wider">
+            EXERCISE RESOLUTE SYNERGY 2026
+          </h2>
+          <p className="text-slate-400 text-[10px] italic mt-1.5 font-semibold">
+            "Enhancing Preparedness Through Joint Training"
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col py-10 px-4">
