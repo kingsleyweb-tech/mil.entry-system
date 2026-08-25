@@ -71,12 +71,34 @@ export function RegistrationConfirmedPage() {
   // ── Loading ──
   if (loading) {
     return (
-      <PageShell>
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <Loader2 size={38} className="animate-spin text-emerald-600" />
-          <p className="text-sm text-slate-500 font-bold">Verifying credentials against database…</p>
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        {/* Ambient background glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        
+        {/* Spinning emblem container */}
+        <div className="relative flex items-center justify-center mb-6">
+          <div className="absolute w-28 h-28 border-4 border-t-emerald-500 border-r-emerald-500/30 border-b-emerald-500/10 border-l-emerald-500/50 rounded-full animate-spin [animation-duration:1s]" />
+          <div className="absolute w-24 h-24 border border-slate-800 rounded-full" />
+          <img 
+            src={gafLogo} 
+            alt="GAF Emblem" 
+            className="w-14 h-14 object-contain relative z-10 animate-pulse [animation-duration:2s]" 
+          />
         </div>
-      </PageShell>
+
+        {/* Text descriptions */}
+        <div className="text-center z-10">
+          <span className="text-[10px] tracking-[0.3em] font-black text-emerald-400 uppercase block leading-none animate-pulse">
+            Security Checkpoint
+          </span>
+          <h2 className="text-white font-extrabold text-sm sm:text-base mt-3.5 uppercase tracking-wider">
+            Verifying credentials...
+          </h2>
+          <p className="text-slate-400 text-[10px] italic mt-1.5 font-semibold">
+            "Enhancing Preparedness Through Joint Training"
+          </p>
+        </div>
+      </div>
     )
   }
 
