@@ -126,7 +126,7 @@ export function RegistrationPage() {
     ? RANKS[form.armOfService] ?? []
     : []
 
-  if (pageLoading) {
+  if (pageLoading || submitting) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 relative overflow-hidden">
         {/* Ambient background glow */}
@@ -145,15 +145,28 @@ export function RegistrationPage() {
 
         {/* Text descriptions */}
         <div className="text-center z-10">
-          <span className="text-[10px] tracking-[0.3em] font-black text-emerald-400 uppercase block leading-none">
-            GHANA ARMED FORCES
-          </span>
-          <h2 className="text-white font-extrabold text-sm sm:text-base mt-3.5 uppercase tracking-wider">
-            EXERCISE RESOLUTE SYNERGY 2026
-          </h2>
-          <p className="text-slate-400 text-[10px] italic mt-1.5 font-semibold">
-            "Enhancing Preparedness Through Joint Training"
-          </p>
+          {submitting ? (
+            <>
+              <span className="text-[10px] tracking-[0.3em] font-black text-emerald-400 uppercase block leading-none animate-pulse">
+                Processing
+              </span>
+              <h2 className="text-white font-extrabold text-sm sm:text-base mt-3.5 uppercase tracking-wider">
+                Submitting form...
+              </h2>
+            </>
+          ) : (
+            <>
+              <span className="text-[10px] tracking-[0.3em] font-black text-emerald-400 uppercase block leading-none">
+                GHANA ARMED FORCES
+              </span>
+              <h2 className="text-white font-extrabold text-sm sm:text-base mt-3.5 uppercase tracking-wider">
+                EXERCISE RESOLUTE SYNERGY 2026
+              </h2>
+              <p className="text-slate-400 text-[10px] italic mt-1.5 font-semibold">
+                "Enhancing Preparedness Through Joint Training"
+              </p>
+            </>
+          )}
         </div>
       </div>
     )
