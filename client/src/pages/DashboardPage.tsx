@@ -224,7 +224,8 @@ export function DashboardPage() {
               <thead className="text-[10px] uppercase tracking-wider text-slate-500 bg-slate-50 border-b border-slate-200">
                 <tr>
                   <th className="px-6 py-3.5 font-bold">Name</th>
-                  <th className="px-6 py-3.5 font-bold">Service Number</th>
+                  <th className="px-6 py-3.5 font-bold">Service No.</th>
+                  <th className="px-6 py-3.5 font-bold">Arm</th>
                   <th className="px-6 py-3.5 font-bold">Rank</th>
                   <th className="px-6 py-3.5 font-bold">Unit</th>
                   <th className="px-6 py-3.5 font-bold">Phone</th>
@@ -238,7 +239,17 @@ export function DashboardPage() {
                   <tr key={person.id} className="hover:bg-slate-50/40 transition duration-75">
                     <td className="px-6 py-4 font-bold text-slate-900">{person.fullName}</td>
                     <td className="px-6 py-4 font-mono text-xs font-semibold text-slate-700">{person.serviceNumber}</td>
-                    <td className="px-6 py-4 text-xs font-semibold text-slate-500">{person.rank}</td>
+                    <td className="px-6 py-4 text-xs font-semibold">
+                      {person.armOfService ? (
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+                          person.armOfService === 'Army' ? 'bg-green-50 text-green-700 border-green-200' :
+                          person.armOfService === 'Navy' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                          person.armOfService === 'Air Force' ? 'bg-sky-50 text-sky-700 border-sky-200' :
+                          'bg-slate-50 text-slate-600 border-slate-200'
+                        }`}>{person.armOfService}</span>
+                      ) : <span className="text-slate-400">—</span>}
+                    </td>
+                    <td className="px-6 py-4 text-xs font-semibold text-slate-500">{person.rank || '—'}</td>
                     <td className="px-6 py-4 text-xs font-semibold text-slate-500">{person.unit}</td>
                     <td className="px-6 py-4 text-xs font-semibold text-slate-500">{person.phone}</td>
                     <td className="px-6 py-4"><StatusBadge status={person.status} /></td>
