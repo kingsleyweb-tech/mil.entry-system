@@ -9,7 +9,6 @@ import {
   Phone, 
   Mail, 
   Briefcase, 
-  Edit3, 
   Send, 
   ShieldCheck, 
   Lock, 
@@ -68,25 +67,6 @@ const ranks = [
   'Civilian',
 ]
 
-// Predefined GAF Units
-const units = [
-  'General Headquarters (GHQ)',
-  'Army Headquarters',
-  'Navy Headquarters',
-  'Air Force Headquarters',
-  'Operations Directorate',
-  'Training Directorate',
-  '1 Infantry Battalion',
-  '2 Infantry Battalion',
-  '3 Infantry Battalion',
-  '4 Infantry Battalion',
-  '5 Infantry Battalion',
-  '6 Infantry Battalion',
-  'Signals Brigade',
-  'Support Services Brigade',
-  'Military Academy and Training School (MATS)',
-  'Recruit Training School',
-]
 
 export function RegistrationPage() {
   const [form, setForm] = useState(initialForm)
@@ -365,26 +345,7 @@ export function RegistrationPage() {
             </div>
           </div>
 
-          {/* Additional Notes Textarea */}
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="notes" className="text-slate-700 text-xs font-bold flex items-center gap-1">
-              Additional Notes <span className="text-slate-400 text-[10px] font-medium">(Optional)</span>
-            </label>
-            <div className="relative">
-              <div className="absolute top-3 left-0 pl-3.5 pointer-events-none text-slate-400">
-                <Edit3 size={16} />
-              </div>
-              <textarea
-                id="notes"
-                placeholder="Any additional information..."
-                value={form.notes}
-                onChange={(e) => updateField('notes', e.target.value)}
-                disabled={submitting}
-                rows={3}
-                className="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-lg pl-10 pr-4 py-2.5 placeholder-slate-400 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition duration-200 resize-none"
-              />
-            </div>
-          </div>
+
 
           {/* Important Warning notice card */}
           <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex items-start gap-3.5 mt-6">
