@@ -24,26 +24,102 @@ import gafLogo from '../assets/gaf.png'
 // ── Rank definitions per arm ─────────────────────────────────────────────────
 const RANKS: Record<string, string[]> = {
   Army: [
-    'General', 'Lieutenant General', 'Major General', 'Brigadier General',
-    'Colonel', 'Lieutenant Colonel', 'Major', 'Captain', 'Lieutenant',
-    'Second Lieutenant', 'Warrant Officer Class I', 'Warrant Officer Class II',
-    'Staff Sergeant', 'Sergeant', 'Corporal', 'Lance Corporal', 'Private / Recruit',
+    // General Officers
+    'General of the Army (5-Star)',
+    'General',
+    'Lieutenant General',
+    'Major General',
+    'Brigadier General',
+    'Brigadier',
+    // Field Officers
+    'Colonel',
+    'Lieutenant Colonel',
+    'Major',
+    // Junior Officers
+    'Captain',
+    'Lieutenant',
+    'Second Lieutenant',
+    // Warrant Officers
+    'Regimental Sergeant Major (RSM)',
+    'Warrant Officer Class I (WO1)',
+    'Warrant Officer Class II (WO2)',
+    // Non-Commissioned Officers
+    'Staff Sergeant',
+    'Sergeant',
+    'Corporal',
+    'Lance Corporal',
+    // Enlisted
+    'Private',
+    'Recruit',
   ],
   Navy: [
-    'Admiral', 'Vice Admiral', 'Rear Admiral', 'Commodore',
-    'Captain', 'Commander', 'Lieutenant Commander', 'Lieutenant', 'Sub Lieutenant',
-    'Midshipman', 'Fleet Chief Petty Officer', 'Chief Petty Officer',
-    'Petty Officer', 'Leading Seaman', 'Able Seaman', 'Ordinary Seaman',
+    'Admiral of the Fleet',
+    'Admiral',
+    'Vice Admiral',
+    'Rear Admiral',
+    'Commodore',
+    'Captain',
+    'Commander',
+    'Lieutenant Commander',
+    'Lieutenant',
+    'Sub Lieutenant',
+    'Acting Sub Lieutenant',
+    'Midshipman',
+    'Fleet Chief Petty Officer',
+    'Chief Petty Officer',
+    'Petty Officer',
+    'Leading Seaman',
+    'Able Seaman',
+    'Ordinary Seaman',
   ],
   'Air Force': [
-    'Air Marshal', 'Air Vice Marshal', 'Air Commodore', 'Group Captain',
-    'Wing Commander', 'Squadron Leader', 'Flight Lieutenant', 'Flying Officer',
-    'Pilot Officer', 'Warrant Officer', 'Flight Sergeant', 'Sergeant',
-    'Corporal', 'Lance Corporal', 'Aircraftman',
+    'Marshal of the Air Force',
+    'Air Chief Marshal',
+    'Air Marshal',
+    'Air Vice Marshal',
+    'Air Commodore',
+    'Group Captain',
+    'Wing Commander',
+    'Squadron Leader',
+    'Flight Lieutenant',
+    'Flying Officer',
+    'Pilot Officer',
+    'Acting Pilot Officer',
+    'Warrant Officer',
+    'Flight Sergeant',
+    'Sergeant',
+    'Corporal',
+    'Lance Corporal',
+    'Aircraftman / Aircraftwoman',
+  ],
+  'General Headquarters': [
+    // General Officers
+    'General',
+    'Lieutenant General',
+    'Major General',
+    'Brigadier General',
+    'Brigadier',
+    // Field Officers
+    'Colonel',
+    'Lieutenant Colonel',
+    'Major',
+    // Junior Officers
+    'Captain',
+    'Lieutenant',
+    'Second Lieutenant',
+    // Warrant Officers
+    'Warrant Officer Class I (WO1)',
+    'Warrant Officer Class II (WO2)',
+    // NCOs
+    'Staff Sergeant',
+    'Sergeant',
+    'Corporal',
+    'Lance Corporal',
+    'Private',
   ],
 }
 
-const ARM_OPTIONS = ['Army', 'Navy', 'Air Force', 'Civilian']
+const ARM_OPTIONS = ['Army', 'Navy', 'Air Force', 'General Headquarters', 'Civilians']
 
 const initialForm: PersonnelForm = {
   fullName: '',
@@ -65,7 +141,7 @@ function validate(form: PersonnelForm) {
   if (!form.fullName.trim()) errors.fullName = 'Full name is required.'
   if (!form.serviceNumber.trim()) errors.serviceNumber = 'Service number is required.'
   if (!form.armOfService.trim()) errors.armOfService = 'Arm of service is required.'
-  if (form.armOfService !== 'Civilian' && !form.rank.trim()) errors.rank = 'Rank is required.'
+  if (form.armOfService !== 'Civilians' && !form.rank.trim()) errors.rank = 'Rank is required.'
   if (!form.unit.trim()) errors.unit = 'Unit or department is required.'
   if (!form.gender.trim()) errors.gender = 'Gender is required.'
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errors.email = 'Enter a valid email address.'
@@ -90,7 +166,9 @@ const getArmClass = (arm: string, isSelected: boolean) => {
       return 'border-blue-700 bg-blue-50 text-blue-800'
     case 'Air Force':
       return 'border-sky-500 bg-sky-50 text-sky-700'
-    case 'Civilian':
+    case 'General Headquarters':
+      return 'border-amber-600 bg-amber-50 text-amber-800'
+    case 'Civilians':
     default:
       return 'border-slate-600 bg-slate-100 text-slate-800'
   }
@@ -105,7 +183,9 @@ const getArmIconClass = (arm: string, isSelected: boolean) => {
       return 'text-blue-700'
     case 'Air Force':
       return 'text-sky-500'
-    case 'Civilian':
+    case 'General Headquarters':
+      return 'text-amber-600'
+    case 'Civilians':
     default:
       return 'text-slate-600'
   }
@@ -154,7 +234,7 @@ export function RegistrationPage() {
     }
   }
 
-  const availableRanks = form.armOfService && form.armOfService !== 'Civilian'
+  const availableRanks = form.armOfService && form.armOfService !== 'Civilians'
     ? RANKS[form.armOfService] ?? []
     : []
 
@@ -262,7 +342,7 @@ export function RegistrationPage() {
 
           {/* Arm of Service */}
           <FieldWrap label="Arm of Service" required error={errors.armOfService}>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
               {ARM_OPTIONS.map((arm) => (
                 <button
                   key={arm}
@@ -284,7 +364,7 @@ export function RegistrationPage() {
           </FieldWrap>
 
           {/* Rank — only shown when arm is not Civilian */}
-          {form.armOfService && form.armOfService !== 'Civilian' && (
+          {form.armOfService && form.armOfService !== 'Civilians' && (
             <FieldWrap label="Rank" required error={errors.rank}>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">

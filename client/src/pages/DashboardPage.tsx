@@ -418,6 +418,8 @@ export function DashboardPage() {
                           person.armOfService === 'Army' ? 'bg-green-50 text-green-700 border-green-200' :
                           person.armOfService === 'Navy' ? 'bg-blue-50 text-blue-700 border-blue-200' :
                           person.armOfService === 'Air Force' ? 'bg-sky-50 text-sky-700 border-sky-200' :
+                          person.armOfService === 'General Headquarters' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                          person.armOfService === 'Civilians' ? 'bg-slate-100 text-slate-700 border-slate-300' :
                           'bg-slate-50 text-slate-600 border-slate-200'
                         }`}>{person.armOfService}</span>
                       ) : <span className="text-slate-400">—</span>}

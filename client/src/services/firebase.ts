@@ -226,7 +226,9 @@ export async function listPersonnel(search: string, status: PersonnelStatus | 'A
         p.fullName.toLowerCase().includes(s) ||
         p.serviceNumber.toLowerCase().replace(/-/g, '').includes(s) ||
         p.registrationId.toLowerCase().replace(/-/g, '').includes(s) ||
-        p.unit.toLowerCase().includes(s),
+        p.unit.toLowerCase().includes(s) ||
+        (p.armOfService ?? '').toLowerCase().includes(s) ||
+        p.rank.toLowerCase().includes(s),
     )
   }
 
