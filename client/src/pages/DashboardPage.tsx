@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Copy, CheckCheck, ExternalLink, Database, Loader2, Search, ShieldCheck, Users, RefreshCw, ArrowUp } from 'lucide-react'
+import { Copy, CheckCheck, ExternalLink, Database, Loader2, Search, ShieldCheck, Users, RefreshCw, ArrowUp, AlertCircle, CheckCircle2, XCircle, X } from 'lucide-react'
 import { StatusBadge } from '../components/StatusBadge'
 import { getStats, listPersonnel, subscribeToEntryControl, updateEntryControl, bulkCheckInPersonnel } from '../services/firebase'
 import type { Personnel, PersonnelStatus, Stats, EntryControlSettings } from '../types/personnel'
@@ -18,42 +18,57 @@ export function DashboardPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [bulkProcessing, setBulkProcessing] = useState(false)
 
-  const handleBulkConfirmSelected = async () => {
+  // Bulk modal state
+  type BulkModalState =
+    | { type: 'confirm-selected'; count: number }
+    | { type: 'confirm-all'; count: number }
+    | { type: 'result'; success: boolean; message: string }
+    | null
+  const [bulkModal, setBulkModal] = useState<BulkModalState>(null)
+
+  const handleBulkConfirmSelected = () => {
     if (selectedIds.length === 0 || bulkProcessing) return
-    const confirm = window.confirm(`Are you sure you want to confirm entry for the ${selectedIds.length} selected personnel?`)
-    if (!confirm) return
+    setBulkModal({ type: 'confirm-selected', count: selectedIds.length })
+  }
+
+  const handleConfirmAllListed = () => {
+    const eligible = personnel.filter(p => p.status !== 'REJECTED' && p.status !== 'ENTERED')
+    if (eligible.length === 0) {
+      setBulkModal({ type: 'result', success: false, message: 'No eligible personnel found to check in.' })
+      return
+    }
+    setBulkModal({ type: 'confirm-all', count: eligible.length })
+  }
+
+  const executeBulkSelected = async () => {
+    setBulkModal(null)
     setBulkProcessing(true)
     try {
       const selectedPersonnel = personnel.filter(p => selectedIds.includes(p.id))
       await bulkCheckInPersonnel(selectedPersonnel)
       setSelectedIds([])
-      await load() // refresh stats & list
-      alert('Entry successfully confirmed for selected personnel.')
+      await load()
+      setBulkModal({ type: 'result', success: true, message: `Entry successfully confirmed for ${selectedPersonnel.length} selected personnel.` })
     } catch (err) {
       console.error(err)
-      alert('Error confirming bulk entry: ' + (err instanceof Error ? err.message : String(err)))
+      setBulkModal({ type: 'result', success: false, message: 'Error confirming entry: ' + (err instanceof Error ? err.message : String(err)) })
     } finally {
       setBulkProcessing(false)
     }
   }
 
-  const handleConfirmAllListed = async () => {
-    const eligible = personnel.filter(p => p.status !== 'REJECTED' && p.status !== 'ENTERED')
-    if (eligible.length === 0) {
-      alert('No eligible personnel found to check in.')
-      return
-    }
-    const confirm = window.confirm(`Are you sure you want to confirm entry for all ${eligible.length} eligible personnel listed?`)
-    if (!confirm) return
+  const executeBulkAll = async () => {
+    setBulkModal(null)
     setBulkProcessing(true)
     try {
+      const eligible = personnel.filter(p => p.status !== 'REJECTED' && p.status !== 'ENTERED')
       await bulkCheckInPersonnel(eligible)
       setSelectedIds([])
-      await load() // refresh stats & list
-      alert(`Entry successfully confirmed for all ${eligible.length} personnel.`)
+      await load()
+      setBulkModal({ type: 'result', success: true, message: `Entry successfully confirmed for all ${eligible.length} personnel.` })
     } catch (err) {
       console.error(err)
-      alert('Error confirming entry for all: ' + (err instanceof Error ? err.message : String(err)))
+      setBulkModal({ type: 'result', success: false, message: 'Error confirming entry: ' + (err instanceof Error ? err.message : String(err)) })
     } finally {
       setBulkProcessing(false)
     }
@@ -593,6 +608,94 @@ export function DashboardPage() {
         >
           <ArrowUp size={20} />
         </button>
+      )}
+
+      {/* ── Confirm Modal ─────────────────────────────────────── */}
+      {bulkModal && (bulkModal.type === 'confirm-selected' || bulkModal.type === 'confirm-all') && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+            onClick={() => setBulkModal(null)}
+          />
+          {/* Panel */}
+          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden animate-[fadeInScale_0.2s_ease]">
+            {/* Header */}
+            <div className="flex items-start justify-between px-6 pt-6 pb-0">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 border border-amber-200">
+                  <AlertCircle size={20} className="text-amber-600" />
+                </span>
+                <div>
+                  <p className="text-sm font-black text-slate-900 tracking-tight">Confirm Entry</p>
+                  <p className="text-[11px] font-semibold text-slate-400 mt-0.5">
+                    {bulkModal.type === 'confirm-selected' ? 'Bulk action on selected personnel' : 'Bulk action on all listed personnel'}
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setBulkModal(null)} className="text-slate-400 hover:text-slate-700 transition mt-0.5 cursor-pointer">
+                <X size={18} />
+              </button>
+            </div>
+            {/* Body */}
+            <div className="px-6 py-5">
+              <p className="text-sm text-slate-600 leading-relaxed">
+                {bulkModal.type === 'confirm-selected'
+                  ? <>You are about to confirm entry for <span className="font-black text-slate-900">{bulkModal.count} selected</span> personnel. This action cannot be undone.</>
+                  : <>You are about to confirm entry for <span className="font-black text-slate-900">all {bulkModal.count} eligible</span> personnel currently listed. This action cannot be undone.</>
+                }
+              </p>
+            </div>
+            {/* Actions */}
+            <div className="flex gap-2.5 px-6 pb-6">
+              <button
+                onClick={() => setBulkModal(null)}
+                className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black text-slate-700 hover:bg-slate-50 transition cursor-pointer active:scale-95"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={bulkModal.type === 'confirm-selected' ? executeBulkSelected : executeBulkAll}
+                disabled={bulkProcessing}
+                className="flex-1 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-black text-white hover:bg-emerald-700 transition cursor-pointer active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {bulkProcessing ? <><Loader2 size={13} className="animate-spin" /> Processing…</> : <><CheckCircle2 size={13} /> Confirm Entry</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Result Modal ───────────────────────────────────────── */}
+      {bulkModal && bulkModal.type === 'result' && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+            onClick={() => setBulkModal(null)}
+          />
+          {/* Panel */}
+          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden animate-[fadeInScale_0.2s_ease]">
+            <div className="flex flex-col items-center gap-3 px-6 py-8 text-center">
+              {bulkModal.success
+                ? <CheckCircle2 size={44} className="text-emerald-500" strokeWidth={1.5} />
+                : <XCircle size={44} className="text-red-500" strokeWidth={1.5} />
+              }
+              <p className="text-base font-black text-slate-900 tracking-tight">
+                {bulkModal.success ? 'Entry Confirmed' : 'Action Failed'}
+              </p>
+              <p className="text-sm text-slate-500 leading-relaxed max-w-[260px]">
+                {bulkModal.message}
+              </p>
+              <button
+                onClick={() => setBulkModal(null)}
+                className="mt-2 w-full rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-black text-white hover:bg-slate-700 transition cursor-pointer active:scale-95"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </section>
   )
