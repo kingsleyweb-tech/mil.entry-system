@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Copy, CheckCheck, ExternalLink, Database, Loader2, Search, ShieldCheck, Users, RefreshCw, ArrowUp } from 'lucide-react'
 import { StatusBadge } from '../components/StatusBadge'
-import { getStats, listPersonnel, subscribeToEntryControl, updateEntryControl } from '../services/firebase'
+import { getStats, listPersonnel, subscribeToEntryControl, updateEntryControl, bulkCheckInPersonnel } from '../services/firebase'
 import type { Personnel, PersonnelStatus, Stats, EntryControlSettings } from '../types/personnel'
 import { formatDate } from '../utils/format'
 import { getBaseUrl } from '../utils/url'
@@ -15,6 +15,50 @@ export function DashboardPage() {
   const [status, setStatus] = useState<PersonnelStatus | 'ALL'>('ALL')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [bulkProcessing, setBulkProcessing] = useState(false)
+
+  const handleBulkConfirmSelected = async () => {
+    if (selectedIds.length === 0 || bulkProcessing) return
+    const confirm = window.confirm(`Are you sure you want to confirm entry for the ${selectedIds.length} selected personnel?`)
+    if (!confirm) return
+    setBulkProcessing(true)
+    try {
+      const selectedPersonnel = personnel.filter(p => selectedIds.includes(p.id))
+      await bulkCheckInPersonnel(selectedPersonnel)
+      setSelectedIds([])
+      await load() // refresh stats & list
+      alert('Entry successfully confirmed for selected personnel.')
+    } catch (err) {
+      console.error(err)
+      alert('Error confirming bulk entry: ' + (err instanceof Error ? err.message : String(err)))
+    } finally {
+      setBulkProcessing(false)
+    }
+  }
+
+  const handleConfirmAllListed = async () => {
+    const eligible = personnel.filter(p => p.status !== 'REJECTED' && p.status !== 'ENTERED')
+    if (eligible.length === 0) {
+      alert('No eligible personnel found to check in.')
+      return
+    }
+    const confirm = window.confirm(`Are you sure you want to confirm entry for all ${eligible.length} eligible personnel listed?`)
+    if (!confirm) return
+    setBulkProcessing(true)
+    try {
+      await bulkCheckInPersonnel(eligible)
+      setSelectedIds([])
+      await load() // refresh stats & list
+      alert(`Entry successfully confirmed for all ${eligible.length} personnel.`)
+    } catch (err) {
+      console.error(err)
+      alert('Error confirming entry for all: ' + (err instanceof Error ? err.message : String(err)))
+    } finally {
+      setBulkProcessing(false)
+    }
+  }
+
   const [copied, setCopied] = useState(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
 
@@ -338,20 +382,32 @@ export function DashboardPage() {
       <div className="mt-6 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         
         {/* Table Filters & Search Bar */}
-        <div className="flex flex-col gap-4 border-b border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between bg-slate-50/50">
-          <label className="relative block sm:w-80 w-full">
-            <Search
-              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-              size={16}
-              aria-hidden="true"
-            />
-            <input
-              className="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-lg pl-10 pr-4 py-2.5 placeholder-slate-400 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by name, service number, unit..."
-            />
-          </label>
+        <div className="flex flex-col gap-4 border-b border-slate-200 p-4 lg:flex-row lg:items-center lg:justify-between bg-slate-50/50">
+          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto items-stretch sm:items-center">
+            <label className="relative block sm:w-80 w-full">
+              <Search
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                size={16}
+                aria-hidden="true"
+              />
+              <input
+                className="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-lg pl-10 pr-4 py-2.5 placeholder-slate-400 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search by name, service number..."
+              />
+            </label>
+            {personnel.length > 0 && personnel.some(p => p.status !== 'REJECTED' && p.status !== 'ENTERED') && (
+              <button
+                type="button"
+                disabled={bulkProcessing}
+                onClick={handleConfirmAllListed}
+                className="border border-emerald-600 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition duration-150 px-4 py-2.5 text-xs font-black uppercase tracking-wider rounded-lg cursor-pointer shrink-0 disabled:opacity-50"
+              >
+                Confirm Entry for All Listed
+              </button>
+            )}
+          </div>
           <div className="flex gap-1.5 overflow-x-auto pb-1 sm:pb-0">
             {filters.map((filter) => (
               <button
@@ -369,6 +425,33 @@ export function DashboardPage() {
             ))}
           </div>
         </div>
+
+        {selectedIds.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-emerald-50 border-b border-emerald-100 px-6 py-4 animate-fade-in">
+            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-emerald-800">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              {selectedIds.length} personnel selected
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={bulkProcessing}
+                onClick={handleBulkConfirmSelected}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider px-4 py-2 rounded-lg cursor-pointer transition shadow-sm disabled:opacity-50"
+              >
+                Confirm Entry for Selected ({selectedIds.length})
+              </button>
+              <button
+                type="button"
+                disabled={bulkProcessing}
+                onClick={() => setSelectedIds([])}
+                className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-black uppercase tracking-wider px-4 py-2 rounded-lg cursor-pointer transition"
+              >
+                Clear Selection
+              </button>
+            </div>
+          </div>
+        )}
 
         {error ? (
           <div className="p-6 text-sm font-semibold text-red-700 bg-red-50">{error}</div>
@@ -396,6 +479,29 @@ export function DashboardPage() {
             <table className="w-full text-left text-sm text-slate-600 border-collapse">
               <thead className="text-[10px] uppercase tracking-wider text-slate-500 bg-slate-50 border-b border-slate-200">
                 <tr>
+                  <th className="px-4 py-3.5 font-bold w-12 text-center">
+                    <input
+                      type="checkbox"
+                      className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer h-4 w-4"
+                      disabled={!personnel.some(p => p.status !== 'ENTERED' && p.status !== 'REJECTED')}
+                      checked={
+                        personnel.length > 0 &&
+                        personnel
+                          .filter(p => p.status !== 'ENTERED' && p.status !== 'REJECTED')
+                          .every(p => selectedIds.includes(p.id))
+                      }
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          const eligibleIds = personnel
+                            .filter(p => p.status !== 'ENTERED' && p.status !== 'REJECTED')
+                            .map(p => p.id)
+                          setSelectedIds(eligibleIds)
+                        } else {
+                          setSelectedIds([])
+                        }
+                      }}
+                    />
+                  </th>
                   <th className="px-6 py-3.5 font-bold">Name</th>
                   <th className="px-6 py-3.5 font-bold">Service No.</th>
                   <th className="px-6 py-3.5 font-bold">Status</th>
@@ -411,6 +517,28 @@ export function DashboardPage() {
               <tbody className="divide-y divide-slate-100 bg-white">
                 {personnel.map((person) => (
                   <tr key={person.id} className="hover:bg-slate-50/40 transition duration-75">
+                    <td className="px-4 py-4 text-center w-12">
+                      {person.status !== 'ENTERED' && person.status !== 'REJECTED' ? (
+                        <input
+                          type="checkbox"
+                          className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer h-4 w-4"
+                          checked={selectedIds.includes(person.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedIds(prev => [...prev, person.id])
+                            } else {
+                              setSelectedIds(prev => prev.filter(id => id !== person.id))
+                            }
+                          }}
+                        />
+                      ) : (
+                        <input
+                          type="checkbox"
+                          disabled
+                          className="rounded border-slate-200 text-slate-300 cursor-not-allowed opacity-40 h-4 w-4"
+                        />
+                      )}
+                    </td>
                     <td className="px-6 py-4 font-bold text-slate-900">{person.fullName}</td>
                     <td className="px-6 py-4 font-mono text-xs font-semibold text-slate-700">{person.serviceNumber}</td>
                     <td className="px-6 py-4 text-xs font-semibold">

@@ -11,6 +11,7 @@ import {
   Timestamp,
   onSnapshot,
   setDoc,
+  writeBatch,
 } from 'firebase/firestore'
 import { db } from '../firebase'
 import type { Personnel, PersonnelForm, PersonnelStatus, Stats, VerifyResponse, EntryControlSettings } from '../types/personnel'
@@ -298,5 +299,26 @@ export async function updateEntryControl(enabled: boolean, updatedBy: string): P
     updatedAt: serverTimestamp(),
     updatedBy: updatedBy || 'Admin',
   }, { merge: true })
+}
+
+export async function bulkCheckInPersonnel(personnelList: Personnel[]): Promise<void> {
+  const eligible = personnelList.filter(p => p.status !== 'REJECTED' && p.status !== 'ENTERED')
+  if (eligible.length === 0) return
+
+  const chunkSize = 500
+  for (let i = 0; i < eligible.length; i += chunkSize) {
+    const chunk = eligible.slice(i, i + chunkSize)
+    const batch = writeBatch(db)
+    for (const p of chunk) {
+      const docRef = doc(db, COLLECTION, p.id)
+      batch.update(docRef, {
+        status: 'ENTERED',
+        enteredAt: serverTimestamp(),
+        lastVerificationAt: serverTimestamp(),
+        verificationCount: (p.verificationCount ?? 0) + 1,
+      })
+    }
+    await batch.commit()
+  }
 }
 
