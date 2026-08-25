@@ -90,7 +90,7 @@ export function RegistrationPage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setPageLoading(false)
-    }, 1200) // Fast 1.2s loading screen
+    }, 2500) // 2.5s loading screen
     return () => clearTimeout(timer)
   }, [])
 
