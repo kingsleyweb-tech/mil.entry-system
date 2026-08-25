@@ -17,6 +17,7 @@ import {
   Home,
   QrCode,
   FileText,
+  Shield,
 } from 'lucide-react'
 import { getPersonnel } from '../services/firebase'
 import type { Personnel } from '../types/personnel'
@@ -177,6 +178,9 @@ export function RegistrationSuccessPage() {
             <div className="space-y-4">
               <DetailRow icon={<User size={15} />} label="Full Name" value={personnel.fullName} />
               <DetailRow icon={<Award size={15} />} label="Service Number" value={personnel.serviceNumber} />
+              {personnel.armOfService && (
+                <DetailRow icon={<Shield size={15} />} label="Arm of Service" value={personnel.armOfService} />
+              )}
               <DetailRow icon={<Award size={15} />} label="Rank" value={personnel.rank} />
               <DetailRow icon={<Building size={15} />} label="Unit / Department" value={personnel.unit} />
               <DetailRow icon={<Phone size={15} />} label="Phone Number" value={personnel.phone} />
