@@ -79,6 +79,38 @@ const ArmIcon = ({ arm }: { arm: string }) => {
   return <ShieldCheck size={16} />
 }
 
+const getArmClass = (arm: string, isSelected: boolean) => {
+  if (!isSelected) {
+    return 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+  }
+  switch (arm) {
+    case 'Army':
+      return 'border-emerald-600 bg-emerald-50 text-emerald-700'
+    case 'Navy':
+      return 'border-blue-700 bg-blue-50 text-blue-800'
+    case 'Air Force':
+      return 'border-sky-500 bg-sky-50 text-sky-700'
+    case 'Civilian':
+    default:
+      return 'border-slate-600 bg-slate-100 text-slate-800'
+  }
+}
+
+const getArmIconClass = (arm: string, isSelected: boolean) => {
+  if (!isSelected) return 'text-slate-400'
+  switch (arm) {
+    case 'Army':
+      return 'text-emerald-600'
+    case 'Navy':
+      return 'text-blue-700'
+    case 'Air Force':
+      return 'text-sky-500'
+    case 'Civilian':
+    default:
+      return 'text-slate-600'
+  }
+}
+
 export function RegistrationPage() {
   const [pageLoading, setPageLoading] = useState(true)
   const [form, setForm] = useState(initialForm)
@@ -238,12 +270,10 @@ export function RegistrationPage() {
                   disabled={submitting}
                   onClick={() => updateField('armOfService', arm)}
                   className={`flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded-xl border-2 transition duration-150 text-xs font-bold cursor-pointer ${
-                    form.armOfService === arm
-                      ? 'border-emerald-600 bg-emerald-50 text-emerald-700'
-                      : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+                    getArmClass(arm, form.armOfService === arm)
                   }`}
                 >
-                  <span className={form.armOfService === arm ? 'text-emerald-600' : 'text-slate-400'}>
+                  <span className={getArmIconClass(arm, form.armOfService === arm)}>
                     <ArmIcon arm={arm} />
                   </span>
                   {arm}
