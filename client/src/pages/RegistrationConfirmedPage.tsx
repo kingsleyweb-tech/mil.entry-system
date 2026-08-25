@@ -34,6 +34,7 @@ export function RegistrationConfirmedPage() {
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState('')
   const [statusMessage, setStatusMessage] = useState('')
+  const [justConfirmed, setJustConfirmed] = useState(false)
 
   // 1. Load personnel details
   useEffect(() => {
@@ -74,6 +75,7 @@ export function RegistrationConfirmedPage() {
     try {
       const response = await checkInPersonnel(registrationId, personnel)
       setPersonnel(response.personnel)
+      setJustConfirmed(true)
       setStatusMessage('Entry has been successfully recorded in the database.')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to confirm entry.')
@@ -164,7 +166,17 @@ export function RegistrationConfirmedPage() {
     <PageShell>
       {/* ── Status Banner Indicators ── */}
       <div className="w-full max-w-sm mb-6">
-        {isEntered ? (
+        {justConfirmed ? (
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-4 flex items-start gap-3">
+            <CheckCircle2 size={20} className="text-emerald-600 shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-extrabold text-xs uppercase tracking-wide">✅ ENTRY CONFIRMED</h4>
+              <p className="text-[10px] text-emerald-700/90 leading-relaxed font-semibold mt-0.5">
+                Personnel has been successfully checked in and entry recorded.
+              </p>
+            </div>
+          </div>
+        ) : isEntered ? (
           <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-4 flex items-start gap-3">
             <ShieldAlert size={20} className="text-amber-600 shrink-0 mt-0.5" />
             <div>
@@ -200,23 +212,28 @@ export function RegistrationConfirmedPage() {
       {/* ── Big Status Icon + Headline ── */}
       <div className="flex flex-col items-center text-center mb-6">
         <div className="relative mb-4">
-          <div className={`absolute inset-0 rounded-full border-2 scale-[1.4] opacity-50 ${
-            isEntered ? 'border-amber-200' : isEnabled ? 'border-emerald-200' : 'border-red-200'
-          }`} />
-          <div className={`absolute inset-0 rounded-full border scale-[1.7] opacity-30 ${
-            isEntered ? 'border-amber-100' : isEnabled ? 'border-emerald-100' : 'border-red-100'
-          }`} />
+          <div className="absolute inset-0 rounded-full border-2 border-emerald-200 scale-[1.4] opacity-50" />
+          <div className="absolute inset-0 rounded-full border border-emerald-100 scale-[1.7] opacity-30" />
           <div className={`w-16 h-16 rounded-full flex items-center justify-center shadow-md ${
-            isEntered ? 'bg-amber-500 shadow-amber-200 text-white' : isEnabled ? 'bg-emerald-500 shadow-emerald-200 text-white' : 'bg-red-500 shadow-red-200 text-white'
+            justConfirmed ? 'bg-emerald-500 shadow-emerald-200 text-white' :
+            isEntered ? 'bg-amber-500 shadow-amber-200 text-white' :
+            isEnabled ? 'bg-emerald-500 shadow-emerald-200 text-white' :
+            'bg-red-500 shadow-red-200 text-white'
           }`}>
-            {isEntered ? <ShieldAlert size={32} /> : isEnabled ? <CheckCircle2 size={32} className="stroke-[2.5]" /> : <AlertTriangle size={32} />}
+            {(justConfirmed || (isEntered && !justConfirmed && isEntered === isEntered)) && justConfirmed
+              ? <CheckCircle2 size={32} className="stroke-[2.5]" />
+              : isEntered ? <ShieldAlert size={32} />
+              : isEnabled ? <CheckCircle2 size={32} className="stroke-[2.5]" />
+              : <AlertTriangle size={32} />}
           </div>
         </div>
 
         <h2 className={`text-2xl sm:text-3xl font-black tracking-tight ${
-          isEntered ? 'text-amber-600' : isEnabled ? 'text-emerald-600' : 'text-red-500'
+          justConfirmed ? 'text-emerald-600' :
+          isEntered ? 'text-amber-600' :
+          isEnabled ? 'text-emerald-600' : 'text-red-500'
         }`}>
-          {isEntered ? 'Already Checked In' : isEnabled ? 'Ready for Entry' : 'Verification Locked'}
+          {justConfirmed ? 'Entry Confirmed!' : isEntered ? 'Already Checked In' : isEnabled ? 'Ready for Entry' : 'Verification Locked'}
         </h2>
         
         {statusMessage && (
