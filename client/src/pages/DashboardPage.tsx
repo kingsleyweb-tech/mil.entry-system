@@ -524,6 +524,7 @@ export function DashboardPage() {
                   <th className="px-6 py-3.5 font-bold">Rank</th>
                   <th className="px-6 py-3.5 font-bold">Unit</th>
                   <th className="px-6 py-3.5 font-bold">Phone</th>
+                  <th className="px-6 py-3.5 font-bold">Email</th>
                   <th className="px-6 py-3.5 font-bold">Entry Status</th>
                   <th className="px-6 py-3.5 font-bold">Registered</th>
                   <th className="px-6 py-3.5 font-bold">Entered</th>
@@ -580,6 +581,11 @@ export function DashboardPage() {
                     <td className="px-6 py-4 text-xs font-semibold text-slate-500">{person.rank || '—'}</td>
                     <td className="px-6 py-4 text-xs font-semibold text-slate-500">{person.unit}</td>
                     <td className="px-6 py-4 text-xs font-semibold text-slate-500">{person.phone}</td>
+                    <td className="px-6 py-4 text-xs text-slate-500 font-mono">
+                      {person.email
+                        ? <a href={`mailto:${person.email}`} className="hover:text-slate-800 hover:underline transition" title={person.email}>{person.email}</a>
+                        : <span className="text-slate-300">—</span>}
+                    </td>
                     <td className="px-6 py-4"><StatusBadge status={person.status} /></td>
                     <td className="px-6 py-4 text-xs font-semibold text-slate-400">{formatDate(person.registeredAt)}</td>
                     <td className="px-6 py-4 text-xs font-semibold text-slate-400">{formatDate(person.enteredAt)}</td>
