@@ -1,27 +1,54 @@
 import { useState } from 'react'
 import type React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { 
-  User, 
-  FileText, 
-  ChevronsUp, 
-  Building, 
-  Phone, 
-  Mail, 
-  Briefcase, 
-  Send, 
-  ShieldCheck, 
-  Lock, 
+import {
+  User,
+  FileText,
+  ChevronsUp,
+  Building,
+  Phone,
+  Mail,
+  Briefcase,
+  Send,
+  ShieldCheck,
+  Lock,
   AlertTriangle,
-  Loader2
+  Loader2,
+  Anchor,
+  Wind,
 } from 'lucide-react'
 import { registerPersonnel } from '../services/firebase'
 import type { PersonnelForm } from '../types/personnel'
 import gafLogo from '../assets/gaf.png'
 
+// ── Rank definitions per arm ─────────────────────────────────────────────────
+const RANKS: Record<string, string[]> = {
+  Army: [
+    'General', 'Lieutenant General', 'Major General', 'Brigadier General',
+    'Colonel', 'Lieutenant Colonel', 'Major', 'Captain', 'Lieutenant',
+    'Second Lieutenant', 'Warrant Officer Class I', 'Warrant Officer Class II',
+    'Staff Sergeant', 'Sergeant', 'Corporal', 'Lance Corporal', 'Private / Recruit',
+  ],
+  Navy: [
+    'Admiral', 'Vice Admiral', 'Rear Admiral', 'Commodore',
+    'Captain', 'Commander', 'Lieutenant Commander', 'Lieutenant', 'Sub Lieutenant',
+    'Midshipman', 'Fleet Chief Petty Officer', 'Chief Petty Officer',
+    'Petty Officer', 'Leading Seaman', 'Able Seaman', 'Ordinary Seaman',
+  ],
+  'Air Force': [
+    'Air Marshal', 'Air Vice Marshal', 'Air Commodore', 'Group Captain',
+    'Wing Commander', 'Squadron Leader', 'Flight Lieutenant', 'Flying Officer',
+    'Pilot Officer', 'Warrant Officer', 'Flight Sergeant', 'Sergeant',
+    'Corporal', 'Lance Corporal', 'Aircraftman',
+  ],
+}
+
+const ARM_OPTIONS = ['Army', 'Navy', 'Air Force', 'Civilian']
+
 const initialForm: PersonnelForm = {
   fullName: '',
   serviceNumber: '',
+  armOfService: '',
   rank: '',
   unit: '',
   gender: '',
@@ -37,7 +64,8 @@ function validate(form: PersonnelForm) {
   const errors: Errors = {}
   if (!form.fullName.trim()) errors.fullName = 'Full name is required.'
   if (!form.serviceNumber.trim()) errors.serviceNumber = 'Service number is required.'
-  if (!form.rank.trim()) errors.rank = 'Rank is required.'
+  if (!form.armOfService.trim()) errors.armOfService = 'Arm of service is required.'
+  if (form.armOfService !== 'Civilian' && !form.rank.trim()) errors.rank = 'Rank is required.'
   if (!form.unit.trim()) errors.unit = 'Unit or department is required.'
   if (!form.gender.trim()) errors.gender = 'Gender is required.'
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errors.email = 'Enter a valid email address.'
@@ -45,28 +73,11 @@ function validate(form: PersonnelForm) {
   return errors
 }
 
-// Predefined GAF Ranks
-const ranks = [
-  'General',
-  'Lieutenant General',
-  'Major General',
-  'Brigadier General',
-  'Colonel',
-  'Lieutenant Colonel',
-  'Major',
-  'Captain',
-  'Lieutenant',
-  'Second Lieutenant',
-  'Warrant Officer Class I',
-  'Warrant Officer Class II',
-  'Staff Sergeant',
-  'Sergeant',
-  'Corporal',
-  'Lance Corporal',
-  'Private / Recruit',
-  'Civilian',
-]
-
+const ArmIcon = ({ arm }: { arm: string }) => {
+  if (arm === 'Navy') return <Anchor size={16} />
+  if (arm === 'Air Force') return <Wind size={16} />
+  return <ShieldCheck size={16} />
+}
 
 export function RegistrationPage() {
   const [form, setForm] = useState(initialForm)
@@ -76,7 +87,12 @@ export function RegistrationPage() {
   const navigate = useNavigate()
 
   const updateField = (field: keyof PersonnelForm, value: string) => {
-    setForm((c) => ({ ...c, [field]: value }))
+    if (field === 'armOfService') {
+      // Reset rank when arm changes
+      setForm((c) => ({ ...c, armOfService: value, rank: '' }))
+    } else {
+      setForm((c) => ({ ...c, [field]: value }))
+    }
     setErrors((c) => ({ ...c, [field]: undefined }))
     setGlobalError('')
   }
@@ -98,158 +114,131 @@ export function RegistrationPage() {
     }
   }
 
+  const availableRanks = form.armOfService && form.armOfService !== 'Civilian'
+    ? RANKS[form.armOfService] ?? []
+    : []
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between py-10 px-4">
-      
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col py-10 px-4">
+
       {/* ── Header ── */}
-      <header className="flex flex-col items-center text-center">
+      <header className="flex flex-col items-center text-center mb-8">
         <img src={gafLogo} alt="GAF Logo" className="w-16 h-16 object-contain pointer-events-none" />
         <div className="mt-3">
-          <span className="text-[10px] tracking-[0.25em] font-black text-slate-400 uppercase block leading-none">
-            Exercise
-          </span>
+          <span className="text-[9px] tracking-[0.25em] font-black text-slate-400 uppercase block leading-none">Exercise</span>
           <h1 className="text-slate-800 font-black text-xl sm:text-2xl mt-1 uppercase tracking-wide leading-tight">
             Resolute Synergy 2026
           </h1>
           <span className="text-[9px] tracking-[0.2em] font-bold text-slate-400 uppercase block mt-1">
             Personnel Registration
           </span>
+          {/* Theme tagline */}
+          <span className="text-[10px] italic text-emerald-600 font-semibold mt-2 block">
+            "Enhancing Preparedness Through Joint Training"
+          </span>
         </div>
       </header>
 
-      {/* ── Main Container ── */}
-      <main className="w-full max-w-lg bg-white border border-slate-100 rounded-2xl shadow-sm p-6 sm:p-8 mx-auto mt-6">
-        
-        {/* Form Title & Description */}
-        <div className="text-center mb-8">
-          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
-            Registration Form
-          </h2>
+      {/* ── Form Container ── */}
+      <main className="w-full max-w-lg bg-white border border-slate-100 rounded-2xl shadow-sm p-6 sm:p-8 mx-auto">
+
+        <div className="text-center mb-7">
+          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Registration Form</h2>
           <p className="text-slate-500 text-xs mt-1.5 font-medium">
             Please fill in the form below to complete your registration.
           </p>
         </div>
 
-        {/* Global error banner */}
         {globalError && (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3.5 mb-6 flex items-start gap-2.5 text-xs font-semibold leading-normal animate-shake">
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3.5 mb-6 flex items-start gap-2.5 text-xs font-semibold leading-normal">
             <AlertTriangle className="text-red-500 shrink-0 mt-0.5" size={16} />
             <p>{globalError}</p>
           </div>
         )}
 
-        {/* Form */}
         <form onSubmit={submit} noValidate className="space-y-4">
-          
-          {/* Full Name Input */}
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="fullName" className="text-slate-700 text-xs font-bold flex items-center gap-1">
-              Full Name <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <User size={16} />
-              </div>
-              <input
-                id="fullName"
-                type="text"
-                placeholder="Enter your full name"
-                value={form.fullName}
-                onChange={(e) => updateField('fullName', e.target.value)}
-                disabled={submitting}
-                className={`w-full bg-white border text-slate-900 text-sm rounded-lg pl-10 pr-4 py-2.5 placeholder-slate-400 focus:outline-none focus:ring-1 transition duration-200 ${
-                  errors.fullName ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-slate-400 focus:ring-slate-400'
-                }`}
-              />
-            </div>
-            {errors.fullName && <span className="text-red-500 text-[10px] font-bold mt-0.5">{errors.fullName}</span>}
-          </div>
 
-          {/* Service Number Input */}
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="serviceNumber" className="text-slate-700 text-xs font-bold flex items-center gap-1">
-              Service Number <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <FileText size={16} />
-              </div>
-              <input
-                id="serviceNumber"
-                type="text"
-                placeholder="Enter your service number"
-                value={form.serviceNumber}
-                onChange={(e) => updateField('serviceNumber', e.target.value.toUpperCase())}
-                disabled={submitting}
-                className={`w-full bg-white border text-slate-900 text-sm rounded-lg pl-10 pr-4 py-2.5 placeholder-slate-400 focus:outline-none focus:ring-1 transition duration-200 ${
-                  errors.serviceNumber ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-slate-400 focus:ring-slate-400'
-                }`}
-              />
-            </div>
-            {errors.serviceNumber && <span className="text-red-500 text-[10px] font-bold mt-0.5">{errors.serviceNumber}</span>}
-          </div>
+          {/* Full Name */}
+          <FieldWrap label="Full Name" required error={errors.fullName}>
+            <InputWithIcon icon={<User size={16} />}
+              id="fullName" type="text" placeholder="Enter your full name"
+              value={form.fullName} disabled={submitting} hasError={!!errors.fullName}
+              onChange={(v) => updateField('fullName', v)} />
+          </FieldWrap>
 
-          {/* Rank Selector */}
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="rank" className="text-slate-700 text-xs font-bold flex items-center gap-1">
-              Rank <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <ChevronsUp size={16} />
-              </div>
-              <select
-                id="rank"
-                value={form.rank}
-                onChange={(e) => updateField('rank', e.target.value)}
-                disabled={submitting}
-                className={`w-full bg-white border text-slate-900 text-sm rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 transition duration-200 appearance-none ${
-                  errors.rank ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-slate-400 focus:ring-slate-400'
-                }`}
-              >
-                <option value="">Select your rank</option>
-                {ranks.map((r) => (
-                  <option key={r} value={r}>{r}</option>
-                ))}
-              </select>
-              <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
-                <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20">
-                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                </svg>
-              </div>
-            </div>
-            {errors.rank && <span className="text-red-500 text-[10px] font-bold mt-0.5">{errors.rank}</span>}
-          </div>
+          {/* Service Number */}
+          <FieldWrap label="Service Number" required error={errors.serviceNumber}>
+            <InputWithIcon icon={<FileText size={16} />}
+              id="serviceNumber" type="text" placeholder="Enter your service number"
+              value={form.serviceNumber} disabled={submitting} hasError={!!errors.serviceNumber}
+              onChange={(v) => updateField('serviceNumber', v.toUpperCase())} />
+          </FieldWrap>
 
-          {/* Unit / Department Input */}
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="unit" className="text-slate-700 text-xs font-bold flex items-center gap-1">
-              Unit / Department <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <Building size={16} />
-              </div>
-              <input
-                id="unit"
-                type="text"
-                placeholder="Enter your unit / department"
-                value={form.unit}
-                onChange={(e) => updateField('unit', e.target.value)}
-                disabled={submitting}
-                className={`w-full bg-white border text-slate-900 text-sm rounded-lg pl-10 pr-4 py-2.5 placeholder-slate-400 focus:outline-none focus:ring-1 transition duration-200 ${
-                  errors.unit ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-slate-400 focus:ring-slate-400'
-                }`}
-              />
+          {/* Arm of Service */}
+          <FieldWrap label="Arm of Service" required error={errors.armOfService}>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {ARM_OPTIONS.map((arm) => (
+                <button
+                  key={arm}
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => updateField('armOfService', arm)}
+                  className={`flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded-xl border-2 transition duration-150 text-xs font-bold cursor-pointer ${
+                    form.armOfService === arm
+                      ? 'border-emerald-600 bg-emerald-50 text-emerald-700'
+                      : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+                  }`}
+                >
+                  <span className={form.armOfService === arm ? 'text-emerald-600' : 'text-slate-400'}>
+                    <ArmIcon arm={arm} />
+                  </span>
+                  {arm}
+                </button>
+              ))}
             </div>
-            {errors.unit && <span className="text-red-500 text-[10px] font-bold mt-0.5">{errors.unit}</span>}
-          </div>
+            {errors.armOfService && <p className="text-red-500 text-[10px] font-bold mt-1">{errors.armOfService}</p>}
+          </FieldWrap>
 
-          {/* Gender Selector */}
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="gender" className="text-slate-700 text-xs font-bold flex items-center gap-1">
-              Gender <span className="text-red-500">*</span>
-            </label>
+          {/* Rank — only shown when arm is not Civilian */}
+          {form.armOfService && form.armOfService !== 'Civilian' && (
+            <FieldWrap label="Rank" required error={errors.rank}>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <ChevronsUp size={16} />
+                </div>
+                <select
+                  id="rank"
+                  value={form.rank}
+                  onChange={(e) => updateField('rank', e.target.value)}
+                  disabled={submitting}
+                  className={`w-full bg-white border text-slate-900 text-sm rounded-lg pl-10 pr-8 py-2.5 focus:outline-none focus:ring-1 transition duration-200 appearance-none ${
+                    errors.rank ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-slate-400 focus:ring-slate-400'
+                  }`}
+                >
+                  <option value="">Select your rank ({form.armOfService})</option>
+                  {availableRanks.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                  <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20">
+                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                  </svg>
+                </div>
+              </div>
+            </FieldWrap>
+          )}
+
+          {/* Unit / Department */}
+          <FieldWrap label="Unit / Department" required error={errors.unit}>
+            <InputWithIcon icon={<Building size={16} />}
+              id="unit" type="text" placeholder="Enter your unit / department"
+              value={form.unit} disabled={submitting} hasError={!!errors.unit}
+              onChange={(v) => updateField('unit', v)} />
+          </FieldWrap>
+
+          {/* Gender */}
+          <FieldWrap label="Gender" required error={errors.gender}>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                 <User size={16} />
@@ -259,7 +248,7 @@ export function RegistrationPage() {
                 value={form.gender}
                 onChange={(e) => updateField('gender', e.target.value)}
                 disabled={submitting}
-                className={`w-full bg-white border text-slate-900 text-sm rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 transition duration-200 appearance-none ${
+                className={`w-full bg-white border text-slate-900 text-sm rounded-lg pl-10 pr-8 py-2.5 focus:outline-none focus:ring-1 transition duration-200 appearance-none ${
                   errors.gender ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-slate-400 focus:ring-slate-400'
                 }`}
               >
@@ -273,83 +262,35 @@ export function RegistrationPage() {
                 </svg>
               </div>
             </div>
-            {errors.gender && <span className="text-red-500 text-[10px] font-bold mt-0.5">{errors.gender}</span>}
-          </div>
+          </FieldWrap>
 
-          {/* Phone Number Input */}
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="phone" className="text-slate-700 text-xs font-bold flex items-center gap-1">
-              Phone Number <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <Phone size={16} />
-              </div>
-              <input
-                id="phone"
-                type="tel"
-                placeholder="e.g. 024 123 4567"
-                value={form.phone}
-                onChange={(e) => updateField('phone', e.target.value)}
-                disabled={submitting}
-                className={`w-full bg-white border text-slate-900 text-sm rounded-lg pl-10 pr-4 py-2.5 placeholder-slate-400 focus:outline-none focus:ring-1 transition duration-200 ${
-                  errors.phone ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-slate-400 focus:ring-slate-400'
-                }`}
-              />
-            </div>
-            {errors.phone && <span className="text-red-500 text-[10px] font-bold mt-0.5">{errors.phone}</span>}
-          </div>
+          {/* Phone Number */}
+          <FieldWrap label="Phone Number" required error={errors.phone}>
+            <InputWithIcon icon={<Phone size={16} />}
+              id="phone" type="tel" placeholder="e.g. 024 123 4567"
+              value={form.phone} disabled={submitting} hasError={!!errors.phone}
+              onChange={(v) => updateField('phone', v)} />
+          </FieldWrap>
 
-          {/* Email Address Input */}
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="email" className="text-slate-700 text-xs font-bold flex items-center gap-1">
-              Email Address <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <Mail size={16} />
-              </div>
-              <input
-                id="email"
-                type="email"
-                placeholder="e.g. name@domain.mil.gh"
-                value={form.email}
-                onChange={(e) => updateField('email', e.target.value)}
-                disabled={submitting}
-                className={`w-full bg-white border text-slate-900 text-sm rounded-lg pl-10 pr-4 py-2.5 placeholder-slate-400 focus:outline-none focus:ring-1 transition duration-200 ${
-                  errors.email ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-slate-400 focus:ring-slate-400'
-                }`}
-              />
-            </div>
-            {errors.email && <span className="text-red-500 text-[10px] font-bold mt-0.5">{errors.email}</span>}
-          </div>
+          {/* Email Address */}
+          <FieldWrap label="Email Address" required error={errors.email}>
+            <InputWithIcon icon={<Mail size={16} />}
+              id="email" type="email" placeholder="e.g. name@domain.mil.gh"
+              value={form.email} disabled={submitting} hasError={!!errors.email}
+              onChange={(v) => updateField('email', v)} />
+          </FieldWrap>
 
-          {/* Appointment / Position Input */}
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="appointment" className="text-slate-700 text-xs font-bold flex items-center gap-1">
-              Appointment / Position <span className="text-slate-400 text-[10px] font-medium">(Optional)</span>
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <Briefcase size={16} />
-              </div>
-              <input
-                id="appointment"
-                type="text"
-                placeholder="Enter your appointment or position"
-                value={form.appointment}
-                onChange={(e) => updateField('appointment', e.target.value)}
-                disabled={submitting}
-                className="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-lg pl-10 pr-4 py-2.5 placeholder-slate-400 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition duration-200"
-              />
-            </div>
-          </div>
+          {/* Appointment / Position */}
+          <FieldWrap label="Appointment / Position" optional>
+            <InputWithIcon icon={<Briefcase size={16} />}
+              id="appointment" type="text" placeholder="Enter your appointment or position"
+              value={form.appointment} disabled={submitting} hasError={false}
+              onChange={(v) => updateField('appointment', v)} />
+          </FieldWrap>
 
-
-
-          {/* Important Warning notice card */}
-          <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex items-start gap-3.5 mt-6">
-            <div className="bg-[#0f2d1d] text-emerald-400 p-2 rounded-xl shadow-inner shrink-0 flex items-center justify-center">
+          {/* Important notice */}
+          <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex items-start gap-3.5 mt-2">
+            <div className="bg-[#0f2d1d] text-emerald-400 p-2 rounded-xl shadow-inner shrink-0">
               <ShieldCheck size={18} />
             </div>
             <div>
@@ -360,27 +301,17 @@ export function RegistrationPage() {
             </div>
           </div>
 
-          {/* Submit Action */}
+          {/* Submit */}
           <div className="pt-2">
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-[#1b4332] hover:bg-[#143224] active:scale-[0.99] text-white font-extrabold py-3 px-4 rounded-xl transition duration-150 flex items-center justify-center gap-2 cursor-pointer text-xs shadow-sm shadow-[#1b4332]/10 uppercase tracking-wider"
+              className="w-full bg-[#1b4332] hover:bg-[#143224] active:scale-[0.99] text-white font-extrabold py-3 px-4 rounded-xl transition duration-150 flex items-center justify-center gap-2 cursor-pointer text-xs shadow-sm uppercase tracking-wider"
             >
-              {submitting ? (
-                <>
-                  <Loader2 className="animate-spin" size={15} />
-                  Submitting…
-                </>
-              ) : (
-                <>
-                  <Send size={14} className="-rotate-12" />
-                  Submit Registration
-                </>
-              )}
+              {submitting
+                ? <><Loader2 className="animate-spin" size={15} />Submitting…</>
+                : <><Send size={14} className="-rotate-12" />Submit Registration</>}
             </button>
-
-            {/* Lock Secure note */}
             <div className="flex items-center justify-center gap-1.5 text-slate-400 text-[10px] mt-4 font-bold tracking-wide">
               <Lock size={12} className="text-slate-300" />
               Your information is secure and protected.
@@ -390,11 +321,67 @@ export function RegistrationPage() {
         </form>
       </main>
 
-      {/* Footer copyright */}
       <footer className="text-center text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-10">
         Exercise Resolute Synergy 2026 &mdash; Ghana Armed Forces
       </footer>
+    </div>
+  )
+}
 
+// ── Small helpers ─────────────────────────────────────────────────────────────
+
+function FieldWrap({
+  label, required, optional, error, children
+}: {
+  label: string
+  required?: boolean
+  optional?: boolean
+  error?: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-slate-700 text-xs font-bold flex items-center gap-1">
+        {label}
+        {required && <span className="text-red-500">*</span>}
+        {optional && <span className="text-slate-400 text-[10px] font-medium">(Optional)</span>}
+      </label>
+      {children}
+      {error && <span className="text-red-500 text-[10px] font-bold">{error}</span>}
+    </div>
+  )
+}
+
+function InputWithIcon({
+  icon, id, type, placeholder, value, disabled, hasError, onChange
+}: {
+  icon: React.ReactNode
+  id: string
+  type: string
+  placeholder: string
+  value: string
+  disabled: boolean
+  hasError: boolean
+  onChange: (v: string) => void
+}) {
+  return (
+    <div className="relative">
+      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+        {icon}
+      </div>
+      <input
+        id={id}
+        type={type}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        className={`w-full bg-white border text-slate-900 text-sm rounded-lg pl-10 pr-4 py-2.5 placeholder-slate-400 focus:outline-none focus:ring-1 transition duration-200 ${
+          hasError
+            ? 'border-red-300 focus:border-red-400 focus:ring-red-400'
+            : 'border-slate-200 focus:border-slate-400 focus:ring-slate-400'
+        }`}
+      />
     </div>
   )
 }

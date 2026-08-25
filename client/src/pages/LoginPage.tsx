@@ -132,6 +132,9 @@ export function LoginPage() {
             <h1 className="text-white font-extrabold text-base uppercase tracking-wider mt-1 block md:hidden">
               Exercise Resolute Synergy 2026
             </h1>
+            <p className="text-emerald-400/80 text-[10px] italic font-semibold mt-1 block md:hidden">
+              "Enhancing Preparedness Through Joint Training"
+            </p>
             <p className="text-slate-400 text-xs mt-1.5 font-bold uppercase tracking-wider">
               Admin Portal Sign-In
             </p>

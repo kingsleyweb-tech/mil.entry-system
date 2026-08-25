@@ -60,6 +60,9 @@ export function VerifyPage() {
         <p className="mt-2 text-slate-600">
           Enter the personnel Registration ID manually to check status and verify entry.
         </p>
+        <p className="text-emerald-600 text-[11px] italic font-semibold mt-1">
+          "Enhancing Preparedness Through Joint Training"
+        </p>
       </div>
 
       <div className={`grid gap-6 ${result ? 'lg:grid-cols-[380px_1fr]' : 'max-w-md mx-auto'}`}>

@@ -88,6 +88,9 @@ export function DashboardPage() {
             Monitor real-time registrations, entry clearances, and system statistics for{' '}
             <strong className="text-slate-800">EXERCISE RESOLUTE SYNERGY 2026</strong>.
           </p>
+          <p className="text-emerald-600 text-[11px] italic font-semibold mt-1">
+            "Enhancing Preparedness Through Joint Training"
+          </p>
         </div>
         <div className="flex items-center gap-2.5">
           <button

@@ -62,6 +62,9 @@ export function QrPassPage() {
             <p className="rs-label">GHANA ARMED FORCES</p>
             <h1 className="rs-title">EXERCISE RESOLUTE SYNERGY 2026</h1>
             <p className="rs-sub">Official Entrance Pass</p>
+            <p style={{ fontSize: '10px', fontStyle: 'italic', color: '#16a34a', fontWeight: 600, marginTop: '2px' }}>
+              "Enhancing Preparedness Through Joint Training"
+            </p>
           </div>
         </div>
       </header>

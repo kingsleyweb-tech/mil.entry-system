@@ -93,6 +93,9 @@ export function RegistrationSuccessPage() {
         <h1 className="text-slate-800 font-extrabold text-sm sm:text-base mt-1 uppercase tracking-wide leading-tight">
           Exercise Resolute Synergy 2026
         </h1>
+        <span className="block text-[10px] italic text-emerald-600 font-semibold mt-0.5">
+          "Enhancing Preparedness Through Joint Training"
+        </span>
       </div>
     </div>
   )

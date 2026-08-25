@@ -32,6 +32,7 @@ function docToPersonnel(id: string, data: any): Personnel {
     registrationId: data.registrationId ?? '',
     fullName: data.fullName ?? '',
     serviceNumber: data.serviceNumber ?? '',
+    armOfService: data.armOfService ?? undefined,
     rank: data.rank ?? '',
     unit: data.unit ?? '',
     gender: data.gender ?? '',
@@ -90,6 +91,7 @@ export async function registerPersonnel(form: PersonnelForm): Promise<{ personne
   const payload: Record<string, unknown> = {
     fullName: form.fullName.trim(),
     serviceNumber: form.serviceNumber.trim().toUpperCase(),
+    armOfService: form.armOfService.trim(),
     rank: form.rank.trim(),
     unit: form.unit.trim(),
     gender: form.gender.trim(),
@@ -116,6 +118,7 @@ export async function registerPersonnel(form: PersonnelForm): Promise<{ personne
     registrationId,
     fullName: payload.fullName as string,
     serviceNumber: payload.serviceNumber as string,
+    armOfService: payload.armOfService as string,
     rank: payload.rank as string,
     unit: payload.unit as string,
     gender: payload.gender as string,
