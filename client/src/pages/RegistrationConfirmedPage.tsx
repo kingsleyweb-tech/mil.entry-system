@@ -15,6 +15,7 @@ import {
   Hash,
   Home,
   ShieldAlert,
+  Loader2,
 } from 'lucide-react'
 import { getPersonnel, checkInPersonnel, subscribeToEntryControl } from '../services/firebase'
 import type { Personnel, EntryControlSettings } from '../types/personnel'
@@ -71,7 +72,7 @@ export function RegistrationConfirmedPage() {
     setError('')
     setStatusMessage('')
     try {
-      const response = await checkInPersonnel(registrationId)
+      const response = await checkInPersonnel(registrationId, personnel)
       setPersonnel(response.personnel)
       setStatusMessage('Entry has been successfully recorded in the database.')
     } catch (err) {
@@ -95,7 +96,7 @@ export function RegistrationConfirmedPage() {
   }
 
   // ── Loading ──
-  if (loading || confirming) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 relative overflow-hidden">
         {/* Ambient background glow */}
@@ -289,9 +290,18 @@ export function RegistrationConfirmedPage() {
       {personnel && !isEntered && isEnabled && (
         <button
           onClick={handleConfirmCheckIn}
-          className="w-full max-w-sm bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-extrabold py-3.5 px-4 rounded-xl transition duration-150 flex items-center justify-center gap-2 text-xs uppercase tracking-widest shadow-md shadow-emerald-600/10 mb-3 cursor-pointer"
+          disabled={confirming}
+          className="w-full max-w-sm bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-extrabold py-3.5 px-4 rounded-xl transition duration-150 flex items-center justify-center gap-2 text-xs uppercase tracking-widest shadow-md shadow-emerald-600/10 mb-3 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <ShieldCheck size={15} /> Confirm Entry
+          {confirming ? (
+            <>
+              <Loader2 className="animate-spin" size={15} /> Recording entry...
+            </>
+          ) : (
+            <>
+              <ShieldCheck size={15} /> Confirm Entry
+            </>
+          )}
         </button>
       )}
 

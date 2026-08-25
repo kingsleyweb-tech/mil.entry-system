@@ -11,7 +11,6 @@ import {
   Timestamp,
   onSnapshot,
   setDoc,
-  getDoc,
 } from 'firebase/firestore'
 import { db } from '../firebase'
 import type { Personnel, PersonnelForm, PersonnelStatus, Stats, VerifyResponse, EntryControlSettings } from '../types/personnel'
@@ -171,17 +170,17 @@ export async function verifyRegistration(registrationId: string): Promise<Verify
   return { result: 'AUTHORIZED', message: 'Personnel is authorized for entry.', personnel }
 }
 
-export async function checkInPersonnel(registrationId: string): Promise<{ message: string; personnel: Personnel }> {
-  // First check if entry verification is enabled in settings
-  const entryControlRef = doc(db, 'systemSettings', 'entryControl')
-  const entrySnap = await getDoc(entryControlRef)
-  const isEnabled = entrySnap.exists() ? entrySnap.data().entryEnabled === true : false
-
-  if (!isEnabled) {
-    throw new Error('Entry verification is currently disabled. Cannot check in personnel.')
+export async function checkInPersonnel(
+  registrationId: string,
+  preloadedPersonnel?: Personnel
+): Promise<{ message: string; personnel: Personnel }> {
+  let personnel: Personnel
+  if (preloadedPersonnel) {
+    personnel = preloadedPersonnel
+  } else {
+    const res = await getPersonnel(registrationId)
+    personnel = res.personnel
   }
-
-  const { personnel } = await getPersonnel(registrationId)
 
   // Verify eligibility
   if (personnel.status === 'REJECTED') {

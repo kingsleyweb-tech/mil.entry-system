@@ -330,7 +330,7 @@ export function DashboardPage() {
         <StatCard label="Total Registered" value={stats?.totalRegistered ?? 0} color="blue" />
         <StatCard label="Approved" value={stats?.approved ?? 0} color="green" />
         <StatCard label="Entered" value={stats?.entered ?? 0} color="emerald" />
-        <StatCard label="Not Yet Entered" value={stats?.notYetEntered ?? 0} color="amber" />
+        <StatCard label="Yet to Confirm Entry" value={stats?.notYetEntered ?? 0} color="amber" />
         <StatCard label="Rejected" value={stats?.rejected ?? 0} color="red" />
       </div>
 
@@ -364,7 +364,7 @@ export function DashboardPage() {
                 type="button"
                 onClick={() => setStatus(filter)}
               >
-                {filter === 'ALL' ? 'All' : filter}
+                {filter === 'ALL' ? 'All' : filter === 'REGISTERED' ? 'Yet to Confirm Entry' : filter}
               </button>
             ))}
           </div>
