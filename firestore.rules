@@ -27,11 +27,20 @@ service cloud.firestore {
 
       // Allow updates (check-in, verification count, status changes)
       allow update: if
-        !request.resource.data.diff(resource.data).affectedKeys()
-          .hasAny(['registrationId', 'serviceNumber']);
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['registrationId', 'serviceNumber']) &&
+        (
+          request.resource.data.status != 'ENTERED' ||
+          get(/databases/$(database)/documents/systemSettings/entryControl).data.entryEnabled == true
+        );
 
       // Prevent deletion from the client
       allow delete: if false;
+    }
+
+    // -- System Settings collection -----------------------------
+    match /systemSettings/entryControl {
+      allow read: if true;
+      allow write: if true;
     }
 
   }

@@ -9,9 +9,12 @@ import {
   orderBy,
   serverTimestamp,
   Timestamp,
+  onSnapshot,
+  setDoc,
+  getDoc,
 } from 'firebase/firestore'
 import { db } from '../firebase'
-import type { Personnel, PersonnelForm, PersonnelStatus, Stats, VerifyResponse } from '../types/personnel'
+import type { Personnel, PersonnelForm, PersonnelStatus, Stats, VerifyResponse, EntryControlSettings } from '../types/personnel'
 import { getBaseUrl } from '../utils/url'
 
 const COLLECTION = 'personnel'
@@ -169,12 +172,40 @@ export async function verifyRegistration(registrationId: string): Promise<Verify
 }
 
 export async function checkInPersonnel(registrationId: string): Promise<{ message: string; personnel: Personnel }> {
+  // First check if entry verification is enabled in settings
+  const entryControlRef = doc(db, 'systemSettings', 'entryControl')
+  const entrySnap = await getDoc(entryControlRef)
+  const isEnabled = entrySnap.exists() ? entrySnap.data().entryEnabled === true : false
+
+  if (!isEnabled) {
+    throw new Error('Entry verification is currently disabled. Cannot check in personnel.')
+  }
+
   const { personnel } = await getPersonnel(registrationId)
+
+  // Verify eligibility
+  if (personnel.status === 'REJECTED') {
+    throw new Error('This personnel has been REJECTED and is not authorized for entry.')
+  }
+  if (personnel.status === 'ENTERED') {
+    throw new Error('Personnel has already checked in.')
+  }
+
+  const nextCount = (personnel.verificationCount ?? 0) + 1
   await updateDoc(doc(db, COLLECTION, personnel.id), {
     status: 'ENTERED',
     enteredAt: serverTimestamp(),
+    lastVerificationAt: serverTimestamp(),
+    verificationCount: nextCount,
   })
-  const updated = { ...personnel, status: 'ENTERED' as PersonnelStatus, enteredAt: new Date().toISOString() }
+
+  const updated = { 
+    ...personnel, 
+    status: 'ENTERED' as PersonnelStatus, 
+    enteredAt: new Date().toISOString(),
+    lastVerificationAt: new Date().toISOString(),
+    verificationCount: nextCount
+  }
   return { message: 'Entry successfully recorded.', personnel: updated }
 }
 
@@ -225,5 +256,42 @@ export async function verifyAdminLocal(username: string, password: string): Prom
     return { success: true, token: `soko-auth-local-${Date.now()}` }
   }
   return { success: false }
+}
+
+export function subscribeToEntryControl(callback: (settings: EntryControlSettings | null) => void): () => void {
+  const docRef = doc(db, 'systemSettings', 'entryControl')
+  return onSnapshot(docRef, (docSnap) => {
+    if (docSnap.exists()) {
+      const data = docSnap.data()
+      let updatedAtStr = undefined
+      if (data.updatedAt) {
+        if (data.updatedAt instanceof Timestamp) {
+          updatedAtStr = data.updatedAt.toDate().toISOString()
+        } else {
+          updatedAtStr = data.updatedAt
+        }
+      }
+      callback({
+        entryEnabled: data.entryEnabled === true,
+        updatedAt: updatedAtStr,
+        updatedBy: data.updatedBy || '',
+      })
+    } else {
+      callback({
+        entryEnabled: false,
+      })
+    }
+  }, (err) => {
+    console.error('Error listening to entry control settings:', err)
+  })
+}
+
+export async function updateEntryControl(enabled: boolean, updatedBy: string): Promise<void> {
+  const docRef = doc(db, 'systemSettings', 'entryControl')
+  await setDoc(docRef, {
+    entryEnabled: enabled,
+    updatedAt: serverTimestamp(),
+    updatedBy: updatedBy || 'Admin',
+  }, { merge: true })
 }
 

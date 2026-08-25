@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Copy, CheckCheck, ExternalLink, Database, Loader2, Search, ShieldCheck, Users, RefreshCw, ArrowUp } from 'lucide-react'
 import { StatusBadge } from '../components/StatusBadge'
-import { getStats, listPersonnel } from '../services/firebase'
-import type { Personnel, PersonnelStatus, Stats } from '../types/personnel'
+import { getStats, listPersonnel, subscribeToEntryControl, updateEntryControl } from '../services/firebase'
+import type { Personnel, PersonnelStatus, Stats, EntryControlSettings } from '../types/personnel'
 import { formatDate } from '../utils/format'
 import { getBaseUrl } from '../utils/url'
 
@@ -17,6 +17,38 @@ export function DashboardPage() {
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
+
+  // Entry Control settings state
+  const [entryControl, setEntryControl] = useState<EntryControlSettings | null>(null)
+  const [entryControlLoading, setEntryControlLoading] = useState(true)
+  const [updatingControl, setUpdatingControl] = useState(false)
+  const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; enable: boolean } | null>(null)
+
+  // Decodes admin username from local storage token
+  const getAdminUsername = () => {
+    const token = localStorage.getItem('adminToken')
+    if (!token) return 'Admin'
+    if (token.startsWith('soko-auth-')) {
+      try {
+        const parts = token.split('-')
+        if (parts[2]) {
+          return atob(parts[2])
+        }
+      } catch {
+        return 'Admin'
+      }
+    }
+    return 'Admin'
+  }
+
+  // Subscribe to entryControl status in real-time
+  useEffect(() => {
+    const unsubscribe = subscribeToEntryControl((settings) => {
+      setEntryControl(settings)
+      setEntryControlLoading(false)
+    })
+    return () => unsubscribe()
+  }, [])
 
   // Track scroll position to show/hide "Scroll to Top" button
   useEffect(() => {
@@ -151,6 +183,147 @@ export function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Entry Verification Control Card ── */}
+      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm mt-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <span className="text-[10px] tracking-[0.25em] font-black text-slate-400 uppercase block mb-1">
+              Security Operations
+            </span>
+            <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">
+              Entry Verification Control
+            </h2>
+            <p className="text-slate-500 text-xs mt-1 font-medium max-w-xl">
+              Manage the global entry state. Disabling this blocks all gate verification check-ins instantly.
+            </p>
+          </div>
+          {/* Status Indicator & Button */}
+          {entryControlLoading ? (
+            <div className="flex items-center gap-2 text-slate-400 text-xs font-bold py-2">
+              <Loader2 className="animate-spin" size={16} /> Loading settings...
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto shrink-0">
+              <div className="flex items-center gap-3">
+                <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 ${
+                  entryControl?.entryEnabled ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'
+                }`}>
+                  <div className={`w-1.5 h-1.5 rounded-full ${
+                    entryControl?.entryEnabled ? 'bg-white' : 'bg-white/70'
+                  }`} />
+                </div>
+                <div>
+                  <span className={`text-xs font-black uppercase tracking-wider ${
+                    entryControl?.entryEnabled ? 'text-emerald-600' : 'text-red-500'
+                  }`}>
+                    {entryControl?.entryEnabled ? '🟢 ENTRY VERIFICATION ACTIVE' : '🔴 ENTRY VERIFICATION DISABLED'}
+                  </span>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase mt-0.5">
+                    {entryControl?.entryEnabled 
+                      ? 'Officials can now verify and check in registered personnel.'
+                      : 'Personnel cannot be checked in at this time.'
+                    }
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                disabled={updatingControl}
+                onClick={() => setConfirmModal({ isOpen: true, enable: !entryControl?.entryEnabled })}
+                className={`px-5 py-2.5 text-xs font-black uppercase tracking-wider rounded-lg cursor-pointer transition shadow-sm ${
+                  entryControl?.entryEnabled
+                    ? 'bg-red-50 border border-red-200 text-red-700 hover:bg-red-100/60'
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/10'
+                }`}
+              >
+                {updatingControl ? (
+                  <span className="flex items-center gap-1">
+                    <Loader2 size={13} className="animate-spin" /> Processing...
+                  </span>
+                ) : entryControl?.entryEnabled ? (
+                  'DISABLE ENTRY VERIFICATION'
+                ) : (
+                  'ENABLE ENTRY VERIFICATION'
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Metadata info */}
+        {entryControl && (entryControl.updatedAt || entryControl.updatedBy) && (
+          <div className="border-t border-slate-100 mt-5 pt-3.5 flex flex-wrap gap-x-6 gap-y-2 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+            {entryControl.updatedAt && (
+              <span>Last updated: {formatDate(entryControl.updatedAt)}</span>
+            )}
+            {entryControl.updatedBy && (
+              <span>Updated by: {entryControl.updatedBy}</span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Custom Confirmation Modal ── */}
+      {confirmModal?.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white border border-slate-100 rounded-2xl p-6 w-full max-w-sm shadow-xl flex flex-col gap-4 animate-scale-up">
+            <div className="flex items-start gap-3">
+              <div className={`p-2.5 rounded-xl shrink-0 ${
+                confirmModal.enable ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+              }`}>
+                <ShieldCheck size={20} />
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900 leading-tight">
+                  {confirmModal.enable ? 'Enable Entry Verification?' : 'Disable Entry Verification?'}
+                </h3>
+                <p className="text-slate-500 text-xs mt-1.5 leading-relaxed font-semibold">
+                  {confirmModal.enable 
+                    ? 'This will allow authorized officials to confirm personnel entry.'
+                    : 'This will prevent all new personnel from being checked in.'
+                  }
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-50">
+              <button
+                type="button"
+                onClick={() => setConfirmModal(null)}
+                className="px-4 py-2 text-xs font-bold text-slate-500 bg-slate-50 hover:bg-slate-100 rounded-lg cursor-pointer transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const toState = confirmModal.enable
+                  setConfirmModal(null)
+                  setUpdatingControl(true)
+                  try {
+                    const username = getAdminUsername()
+                    await updateEntryControl(toState, username)
+                  } catch (err) {
+                    console.error('Failed to toggle settings:', err)
+                    alert('Failed to update entry control: ' + (err instanceof Error ? err.message : String(err)))
+                  } finally {
+                    setUpdatingControl(false)
+                  }
+                }}
+                className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-lg cursor-pointer text-white transition ${
+                  confirmModal.enable 
+                    ? 'bg-emerald-600 hover:bg-emerald-700' 
+                    : 'bg-red-600 hover:bg-red-700'
+                }`}
+              >
+                {confirmModal.enable ? 'Enable' : 'Disable'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Stats (Simple Clean Grid) ── */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6">

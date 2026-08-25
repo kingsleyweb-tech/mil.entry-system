@@ -47,3 +47,9 @@ export type VerifyResponse = {
   message: string
   personnel?: Personnel
 }
+
+export type EntryControlSettings = {
+  entryEnabled: boolean
+  updatedAt?: string
+  updatedBy?: string
+}

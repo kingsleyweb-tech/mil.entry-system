@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type React from 'react'
 import {
   AlertOctagon,
@@ -11,8 +11,8 @@ import {
   User,
 } from 'lucide-react'
 import { StatusBadge } from '../components/StatusBadge'
-import { checkInPersonnel, verifyRegistration } from '../services/firebase'
-import type { VerifyResponse } from '../types/personnel'
+import { checkInPersonnel, verifyRegistration, subscribeToEntryControl } from '../services/firebase'
+import type { VerifyResponse, EntryControlSettings } from '../types/personnel'
 import { formatDate } from '../utils/format'
 
 export function VerifyPage() {
@@ -20,6 +20,14 @@ export function VerifyPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<VerifyResponse>()
+  const [entryControl, setEntryControl] = useState<EntryControlSettings | null>(null)
+
+  useEffect(() => {
+    const unsubscribe = subscribeToEntryControl((settings) => {
+      setEntryControl(settings)
+    })
+    return () => unsubscribe()
+  }, [])
 
   const verify = async (registrationId: string) => {
     const cleanId = registrationId.trim().toUpperCase()
@@ -65,6 +73,33 @@ export function VerifyPage() {
         </p>
       </div>
 
+      {/* Global Entry Status Banner */}
+      {entryControl && (
+        <div className="mb-6 max-w-md mx-auto lg:max-w-none">
+          {entryControl.entryEnabled ? (
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-4 flex items-start gap-3">
+              <ShieldCheck size={20} className="text-emerald-600 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-extrabold text-xs uppercase tracking-wide">🟢 ENTRY VERIFICATION ACTIVE</h4>
+                <p className="text-[10px] text-emerald-700/90 leading-relaxed font-semibold mt-0.5">
+                  Personnel verification is currently open.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 flex items-start gap-3">
+              <AlertOctagon size={20} className="text-red-600 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-extrabold text-xs uppercase tracking-wide">🔴 ENTRY VERIFICATION DISABLED</h4>
+                <p className="text-[10px] text-red-700/90 leading-relaxed font-semibold mt-0.5">
+                  Entry verification is currently unavailable. Please contact the administrator.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className={`grid gap-6 ${result ? 'lg:grid-cols-[380px_1fr]' : 'max-w-md mx-auto'}`}>
         {/* ── Manual Verification Panel ── */}
         <div className="rounded-md border border-slate-200 bg-white p-5 shadow-sm h-fit">
@@ -102,7 +137,12 @@ export function VerifyPage() {
         </div>
 
         {/* ── Result Panel ── */}
-        <VerificationResult result={result} loading={loading} onConfirm={confirmEntry} />
+        <VerificationResult 
+          result={result} 
+          loading={loading} 
+          onConfirm={confirmEntry} 
+          entryEnabled={entryControl?.entryEnabled === true} 
+        />
       </div>
     </section>
   )
@@ -113,10 +153,12 @@ function VerificationResult({
   result,
   loading,
   onConfirm,
+  entryEnabled,
 }: {
   result?: VerifyResponse
   loading: boolean
   onConfirm: () => void
+  entryEnabled: boolean
 }) {
   if (!result) {
     return null
@@ -173,15 +215,15 @@ function VerificationResult({
     >
       {!entered ? (
         <button
-          className="success-button mt-5"
+          className="success-button mt-5 disabled:opacity-50 disabled:cursor-not-allowed"
           type="button"
           onClick={onConfirm}
-          disabled={loading}
+          disabled={loading || !entryEnabled}
         >
           {loading
             ? <Loader2 className="animate-spin" size={20} aria-hidden="true" />
             : <ShieldCheck size={20} aria-hidden="true" />}
-          CONFIRM ENTRY
+          {!entryEnabled ? 'ENTRY LOCKED (DISABLED)' : 'CONFIRM ENTRY'}
         </button>
       ) : null}
     </Outcome>
