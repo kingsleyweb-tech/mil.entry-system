@@ -16,6 +16,7 @@ import {
   Loader2,
   Anchor,
   Wind,
+  Users,
 } from 'lucide-react'
 import { registerPersonnel } from '../services/firebase'
 import type { PersonnelForm } from '../types/personnel'
@@ -92,40 +93,17 @@ const RANKS: Record<string, string[]> = {
     'Lance Corporal',
     'Aircraftman / Aircraftwoman',
   ],
-  'General Headquarters': [
-    // General Officers
-    'General',
-    'Lieutenant General',
-    'Major General',
-    'Brigadier General',
-    'Brigadier',
-    // Field Officers
-    'Colonel',
-    'Lieutenant Colonel',
-    'Major',
-    // Junior Officers
-    'Captain',
-    'Lieutenant',
-    'Second Lieutenant',
-    // Warrant Officers
-    'Warrant Officer Class I (WO1)',
-    'Warrant Officer Class II (WO2)',
-    // NCOs
-    'Staff Sergeant',
-    'Sergeant',
-    'Corporal',
-    'Lance Corporal',
-    'Private',
-  ],
 }
 
-const ARM_OPTIONS = ['Army', 'Navy', 'Air Force', 'General Headquarters', 'Civilians']
+const ARM_OPTIONS = ['Army', 'Navy', 'Air Force']
+const STATUS_OPTIONS = ['Participants', 'Evaluators', 'General Headquarters', 'Civilians']
 
 const initialForm: PersonnelForm = {
   fullName: '',
   serviceNumber: '',
   armOfService: '',
   rank: '',
+  exerciseStatus: '',
   unit: '',
   gender: '',
   phone: '',
@@ -140,8 +118,11 @@ function validate(form: PersonnelForm) {
   const errors: Errors = {}
   if (!form.fullName.trim()) errors.fullName = 'Full name is required.'
   if (!form.serviceNumber.trim()) errors.serviceNumber = 'Service number is required.'
-  if (!form.armOfService.trim()) errors.armOfService = 'Arm of service is required.'
-  if (form.armOfService !== 'Civilians' && !form.rank.trim()) errors.rank = 'Rank is required.'
+  if (!form.exerciseStatus.trim()) errors.exerciseStatus = 'Status is required.'
+  if (form.exerciseStatus !== 'Civilians') {
+    if (!form.armOfService.trim()) errors.armOfService = 'Arm of service is required.'
+    if (!form.rank.trim()) errors.rank = 'Rank is required.'
+  }
   if (!form.unit.trim()) errors.unit = 'Unit or department is required.'
   if (!form.gender.trim()) errors.gender = 'Gender is required.'
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errors.email = 'Enter a valid email address.'
@@ -155,6 +136,13 @@ const ArmIcon = ({ arm }: { arm: string }) => {
   return <ShieldCheck size={16} />
 }
 
+const StatusIcon = ({ status }: { status: string }) => {
+  if (status === 'Participants') return <Users size={16} />
+  if (status === 'Evaluators') return <ShieldCheck size={16} />
+  if (status === 'General Headquarters') return <Building size={16} />
+  return <User size={16} />
+}
+
 const getArmClass = (arm: string, isSelected: boolean) => {
   if (!isSelected) {
     return 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
@@ -166,9 +154,6 @@ const getArmClass = (arm: string, isSelected: boolean) => {
       return 'border-blue-700 bg-blue-50 text-blue-800'
     case 'Air Force':
       return 'border-sky-500 bg-sky-50 text-sky-700'
-    case 'General Headquarters':
-      return 'border-amber-600 bg-amber-50 text-amber-800'
-    case 'Civilians':
     default:
       return 'border-slate-600 bg-slate-100 text-slate-800'
   }
@@ -183,6 +168,35 @@ const getArmIconClass = (arm: string, isSelected: boolean) => {
       return 'text-blue-700'
     case 'Air Force':
       return 'text-sky-500'
+    default:
+      return 'text-slate-600'
+  }
+}
+
+const getStatusClass = (status: string, isSelected: boolean) => {
+  if (!isSelected) {
+    return 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+  }
+  switch (status) {
+    case 'Participants':
+      return 'border-emerald-600 bg-emerald-50 text-emerald-700'
+    case 'Evaluators':
+      return 'border-blue-700 bg-blue-50 text-blue-800'
+    case 'General Headquarters':
+      return 'border-amber-600 bg-amber-50 text-amber-800'
+    case 'Civilians':
+    default:
+      return 'border-slate-600 bg-slate-100 text-slate-800'
+  }
+}
+
+const getStatusIconClass = (status: string, isSelected: boolean) => {
+  if (!isSelected) return 'text-slate-400'
+  switch (status) {
+    case 'Participants':
+      return 'text-emerald-600'
+    case 'Evaluators':
+      return 'text-blue-700'
     case 'General Headquarters':
       return 'text-amber-600'
     case 'Civilians':
@@ -207,7 +221,13 @@ export function RegistrationPage() {
   }, [])
 
   const updateField = (field: keyof PersonnelForm, value: string) => {
-    if (field === 'armOfService') {
+    if (field === 'exerciseStatus') {
+      if (value === 'Civilians') {
+        setForm((c) => ({ ...c, exerciseStatus: value, armOfService: '', rank: '' }))
+      } else {
+        setForm((c) => ({ ...c, exerciseStatus: value }))
+      }
+    } else if (field === 'armOfService') {
       // Reset rank when arm changes
       setForm((c) => ({ ...c, armOfService: value, rank: '' }))
     } else {
@@ -234,7 +254,7 @@ export function RegistrationPage() {
     }
   }
 
-  const availableRanks = form.armOfService && form.armOfService !== 'Civilians'
+  const availableRanks = form.armOfService && form.exerciseStatus !== 'Civilians'
     ? RANKS[form.armOfService] ?? []
     : []
 
@@ -340,31 +360,56 @@ export function RegistrationPage() {
               onChange={(v) => updateField('serviceNumber', v.toUpperCase())} />
           </FieldWrap>
 
-          {/* Arm of Service */}
-          <FieldWrap label="Arm of Service" required error={errors.armOfService}>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
-              {ARM_OPTIONS.map((arm) => (
+          {/* Status */}
+          <FieldWrap label="Status" required error={errors.exerciseStatus}>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {STATUS_OPTIONS.map((status) => (
                 <button
-                  key={arm}
+                  key={status}
                   type="button"
                   disabled={submitting}
-                  onClick={() => updateField('armOfService', arm)}
+                  onClick={() => updateField('exerciseStatus', status)}
                   className={`flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded-xl border-2 transition duration-150 text-xs font-bold cursor-pointer ${
-                    getArmClass(arm, form.armOfService === arm)
+                    getStatusClass(status, form.exerciseStatus === status)
                   }`}
                 >
-                  <span className={getArmIconClass(arm, form.armOfService === arm)}>
-                    <ArmIcon arm={arm} />
+                  <span className={getStatusIconClass(status, form.exerciseStatus === status)}>
+                    <StatusIcon status={status} />
                   </span>
-                  {arm}
+                  {status}
                 </button>
               ))}
             </div>
-            {errors.armOfService && <p className="text-red-500 text-[10px] font-bold mt-1">{errors.armOfService}</p>}
+            {errors.exerciseStatus && <p className="text-red-500 text-[10px] font-bold mt-1">{errors.exerciseStatus}</p>}
           </FieldWrap>
 
-          {/* Rank — only shown when arm is not Civilian */}
-          {form.armOfService && form.armOfService !== 'Civilians' && (
+          {/* Arm of Service — only shown when status is not Civilians */}
+          {form.exerciseStatus && form.exerciseStatus !== 'Civilians' && (
+            <FieldWrap label="Arm of Service" required error={errors.armOfService}>
+              <div className="grid grid-cols-3 gap-2">
+                {ARM_OPTIONS.map((arm) => (
+                  <button
+                    key={arm}
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => updateField('armOfService', arm)}
+                    className={`flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded-xl border-2 transition duration-150 text-xs font-bold cursor-pointer ${
+                      getArmClass(arm, form.armOfService === arm)
+                    }`}
+                  >
+                    <span className={getArmIconClass(arm, form.armOfService === arm)}>
+                      <ArmIcon arm={arm} />
+                    </span>
+                    {arm}
+                  </button>
+                ))}
+              </div>
+              {errors.armOfService && <p className="text-red-500 text-[10px] font-bold mt-1">{errors.armOfService}</p>}
+            </FieldWrap>
+          )}
+
+          {/* Rank — only shown when status is not Civilians and arm of service is selected */}
+          {form.exerciseStatus && form.exerciseStatus !== 'Civilians' && form.armOfService && (
             <FieldWrap label="Rank" required error={errors.rank}>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">

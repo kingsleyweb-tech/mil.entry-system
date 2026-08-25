@@ -398,11 +398,12 @@ export function DashboardPage() {
                 <tr>
                   <th className="px-6 py-3.5 font-bold">Name</th>
                   <th className="px-6 py-3.5 font-bold">Service No.</th>
+                  <th className="px-6 py-3.5 font-bold">Status</th>
                   <th className="px-6 py-3.5 font-bold">Arm</th>
                   <th className="px-6 py-3.5 font-bold">Rank</th>
                   <th className="px-6 py-3.5 font-bold">Unit</th>
                   <th className="px-6 py-3.5 font-bold">Phone</th>
-                  <th className="px-6 py-3.5 font-bold">Status</th>
+                  <th className="px-6 py-3.5 font-bold">Entry Status</th>
                   <th className="px-6 py-3.5 font-bold">Registered</th>
                   <th className="px-6 py-3.5 font-bold">Entered</th>
                 </tr>
@@ -413,13 +414,22 @@ export function DashboardPage() {
                     <td className="px-6 py-4 font-bold text-slate-900">{person.fullName}</td>
                     <td className="px-6 py-4 font-mono text-xs font-semibold text-slate-700">{person.serviceNumber}</td>
                     <td className="px-6 py-4 text-xs font-semibold">
+                      {person.exerciseStatus ? (
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+                          person.exerciseStatus === 'Participants' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                          person.exerciseStatus === 'Evaluators' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                          person.exerciseStatus === 'General Headquarters' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                          person.exerciseStatus === 'Civilians' ? 'bg-slate-100 text-slate-700 border-slate-300' :
+                          'bg-slate-50 text-slate-600 border-slate-200'
+                        }`}>{person.exerciseStatus}</span>
+                      ) : <span className="text-slate-400">—</span>}
+                    </td>
+                    <td className="px-6 py-4 text-xs font-semibold">
                       {person.armOfService ? (
                         <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
                           person.armOfService === 'Army' ? 'bg-green-50 text-green-700 border-green-200' :
                           person.armOfService === 'Navy' ? 'bg-blue-50 text-blue-700 border-blue-200' :
                           person.armOfService === 'Air Force' ? 'bg-sky-50 text-sky-700 border-sky-200' :
-                          person.armOfService === 'General Headquarters' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                          person.armOfService === 'Civilians' ? 'bg-slate-100 text-slate-700 border-slate-300' :
                           'bg-slate-50 text-slate-600 border-slate-200'
                         }`}>{person.armOfService}</span>
                       ) : <span className="text-slate-400">—</span>}

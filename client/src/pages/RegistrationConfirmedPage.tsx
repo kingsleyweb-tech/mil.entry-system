@@ -16,6 +16,8 @@ import {
   Home,
   ShieldAlert,
   Loader2,
+  Users,
+  Shield,
 } from 'lucide-react'
 import { getPersonnel, checkInPersonnel, subscribeToEntryControl } from '../services/firebase'
 import type { Personnel, EntryControlSettings } from '../types/personnel'
@@ -256,8 +258,11 @@ export function RegistrationConfirmedPage() {
           <div className="divide-y divide-slate-50 px-5">
             <ConfirmRow icon={<User size={14} />} label="Full Name" value={personnel.fullName} bold />
             <ConfirmRow icon={<FileText size={14} />} label="Service Number" value={personnel.serviceNumber} />
+            {personnel.exerciseStatus && (
+              <ConfirmRow icon={<Users size={14} />} label="Status" value={personnel.exerciseStatus} />
+            )}
             {personnel.armOfService && (
-              <ConfirmRow icon={<ShieldCheck size={14} />} label="Arm of Service" value={personnel.armOfService} />
+              <ConfirmRow icon={<Shield size={14} />} label="Arm of Service" value={personnel.armOfService} />
             )}
             {personnel.rank && (
               <ConfirmRow icon={<ChevronsUp size={14} />} label="Rank" value={personnel.rank} bold />

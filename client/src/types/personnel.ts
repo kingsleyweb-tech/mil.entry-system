@@ -7,6 +7,7 @@ export type Personnel = {
   serviceNumber: string
   armOfService?: string
   rank: string
+  exerciseStatus: string
   unit: string
   gender: string
   phone: string
@@ -26,6 +27,7 @@ export type PersonnelForm = {
   serviceNumber: string
   armOfService: string
   rank: string
+  exerciseStatus: string
   unit: string
   gender: string
   phone: string

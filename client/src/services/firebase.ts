@@ -36,6 +36,7 @@ function docToPersonnel(id: string, data: any): Personnel {
     serviceNumber: data.serviceNumber ?? '',
     armOfService: data.armOfService ?? undefined,
     rank: data.rank ?? '',
+    exerciseStatus: data.exerciseStatus ?? '',
     unit: data.unit ?? '',
     gender: data.gender ?? '',
     phone: data.phone ?? '',
@@ -95,6 +96,7 @@ export async function registerPersonnel(form: PersonnelForm): Promise<{ personne
     serviceNumber: form.serviceNumber.trim().toUpperCase(),
     armOfService: form.armOfService.trim(),
     rank: form.rank.trim(),
+    exerciseStatus: form.exerciseStatus.trim(),
     unit: form.unit.trim(),
     gender: form.gender.trim(),
     phone: form.phone.trim(),
@@ -122,6 +124,7 @@ export async function registerPersonnel(form: PersonnelForm): Promise<{ personne
     serviceNumber: payload.serviceNumber as string,
     armOfService: payload.armOfService as string,
     rank: payload.rank as string,
+    exerciseStatus: payload.exerciseStatus as string,
     unit: payload.unit as string,
     gender: payload.gender as string,
     phone: payload.phone as string,
@@ -228,6 +231,7 @@ export async function listPersonnel(search: string, status: PersonnelStatus | 'A
         p.registrationId.toLowerCase().replace(/-/g, '').includes(s) ||
         p.unit.toLowerCase().includes(s) ||
         (p.armOfService ?? '').toLowerCase().includes(s) ||
+        p.exerciseStatus.toLowerCase().includes(s) ||
         p.rank.toLowerCase().includes(s),
     )
   }
