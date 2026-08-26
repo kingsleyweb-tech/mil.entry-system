@@ -17,6 +17,7 @@ import {
   Anchor,
   Wind,
   Users,
+  Landmark,
 } from 'lucide-react'
 import { registerPersonnel } from '../services/firebase'
 import type { PersonnelForm } from '../types/personnel'
@@ -95,7 +96,7 @@ const RANKS: Record<string, string[]> = {
   ],
 }
 
-const ARM_OPTIONS = ['Army', 'Navy', 'Air Force']
+const ARM_OPTIONS = ['Army', 'Navy', 'Air Force', 'DCS']
 const STATUS_OPTIONS = ['Participants', 'Evaluators', 'General Headquarters', 'Civilians']
 
 const initialForm: PersonnelForm = {
@@ -133,6 +134,7 @@ function validate(form: PersonnelForm) {
 const ArmIcon = ({ arm }: { arm: string }) => {
   if (arm === 'Navy') return <Anchor size={16} />
   if (arm === 'Air Force') return <Wind size={16} />
+  if (arm === 'DCS') return <Landmark size={16} />
   return <ShieldCheck size={16} />
 }
 
@@ -154,6 +156,8 @@ const getArmClass = (arm: string, isSelected: boolean) => {
       return 'border-blue-700 bg-blue-50 text-blue-800'
     case 'Air Force':
       return 'border-sky-500 bg-sky-50 text-sky-700'
+    case 'DCS':
+      return 'border-violet-600 bg-violet-50 text-violet-800'
     default:
       return 'border-slate-600 bg-slate-100 text-slate-800'
   }
@@ -168,6 +172,8 @@ const getArmIconClass = (arm: string, isSelected: boolean) => {
       return 'text-blue-700'
     case 'Air Force':
       return 'text-sky-500'
+    case 'DCS':
+      return 'text-violet-600'
     default:
       return 'text-slate-600'
   }
@@ -386,7 +392,7 @@ export function RegistrationPage() {
           {/* Arm of Service — only shown when status is not Civilians */}
           {form.exerciseStatus && form.exerciseStatus !== 'Civilians' && (
             <FieldWrap label="Arm of Service" required error={errors.armOfService}>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {ARM_OPTIONS.map((arm) => (
                   <button
                     key={arm}
@@ -411,30 +417,45 @@ export function RegistrationPage() {
           {/* Rank — only shown when status is not Civilians and arm of service is selected */}
           {form.exerciseStatus && form.exerciseStatus !== 'Civilians' && form.armOfService && (
             <FieldWrap label="Rank" required error={errors.rank}>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <ChevronsUp size={16} />
-                </div>
-                <select
+              {form.armOfService === 'DCS' ? (
+                // DCS: free-text manual rank entry
+                <InputWithIcon
+                  icon={<ChevronsUp size={16} />}
                   id="rank"
+                  type="text"
+                  placeholder="Enter your rank (e.g. Director, Deputy Director)"
                   value={form.rank}
-                  onChange={(e) => updateField('rank', e.target.value)}
                   disabled={submitting}
-                  className={`w-full bg-white border text-slate-900 text-sm rounded-lg pl-10 pr-8 py-2.5 focus:outline-none focus:ring-1 transition duration-200 appearance-none ${
-                    errors.rank ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-slate-400 focus:ring-slate-400'
-                  }`}
-                >
-                  <option value="">Select your rank ({form.armOfService})</option>
-                  {availableRanks.map((r) => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
-                  <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20">
-                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                  </svg>
+                  hasError={!!errors.rank}
+                  onChange={(v) => updateField('rank', v)}
+                />
+              ) : (
+                // Army / Navy / Air Force: dropdown
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <ChevronsUp size={16} />
+                  </div>
+                  <select
+                    id="rank"
+                    value={form.rank}
+                    onChange={(e) => updateField('rank', e.target.value)}
+                    disabled={submitting}
+                    className={`w-full bg-white border text-slate-900 text-sm rounded-lg pl-10 pr-8 py-2.5 focus:outline-none focus:ring-1 transition duration-200 appearance-none ${
+                      errors.rank ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : 'border-slate-200 focus:border-slate-400 focus:ring-slate-400'
+                    }`}
+                  >
+                    <option value="">Select your rank ({form.armOfService})</option>
+                    {availableRanks.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                    <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20">
+                      <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                    </svg>
+                  </div>
                 </div>
-              </div>
+              )}
             </FieldWrap>
           )}
 
