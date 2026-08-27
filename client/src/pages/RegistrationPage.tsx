@@ -547,14 +547,14 @@ export function RegistrationPage() {
               Your information is secure and protected.
             </div>
             <div className="text-center mt-3.5 text-[10px] text-slate-400 font-medium">
-              Powered by{' '}
+              © 2026 · Designed & Developed by{' '}
               <a
                 href="https://kingdev-aa.vercel.app"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-emerald-600 hover:text-emerald-700 font-semibold underline transition duration-150"
               >
-                KingsleyDev
+                KingDev
               </a>
             </div>
           </div>
