@@ -358,7 +358,18 @@ function PageShell({ children }: { children: React.ReactNode }) {
       </header>
       <main className="flex flex-col items-center w-full">{children}</main>
       <footer className="text-center text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-10">
-        Exercise Resolute Synergy 2026 &mdash; Ghana Armed Forces Entry Control System
+        <div>Exercise Resolute Synergy 2026 &mdash; Ghana Armed Forces Entry Control System</div>
+        <div className="text-[9px] text-slate-400 font-medium normal-case tracking-normal mt-2">
+          Powered by{' '}
+          <a
+            href="https://kingdev-aa.vercel.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-emerald-600 hover:text-emerald-700 font-semibold underline transition duration-150"
+          >
+            KingsleyDev
+          </a>
+        </div>
       </footer>
     </div>
   )

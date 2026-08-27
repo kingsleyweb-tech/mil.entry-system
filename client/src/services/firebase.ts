@@ -12,6 +12,7 @@ import {
   onSnapshot,
   setDoc,
   writeBatch,
+  deleteDoc,
 } from 'firebase/firestore'
 import { db } from '../firebase'
 import type { Personnel, PersonnelForm, PersonnelStatus, Stats, VerifyResponse, EntryControlSettings } from '../types/personnel'
@@ -321,4 +322,6 @@ export async function bulkCheckInPersonnel(personnelList: Personnel[]): Promise<
     await batch.commit()
   }
 }
-
+export async function deletePersonnel(docId: string): Promise<void> {
+  await deleteDoc(doc(db, COLLECTION, docId))
+}

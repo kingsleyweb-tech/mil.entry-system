@@ -119,7 +119,18 @@ export function RegistrationSuccessPage() {
           </button>
         </div>
         <footer className="text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-10">
-          EXERCISE RESOLUTE SYNERGY 2026 &mdash; Ghana Armed Forces
+          <div>EXERCISE RESOLUTE SYNERGY 2026 &mdash; Ghana Armed Forces</div>
+          <div className="text-[9px] text-slate-400 font-medium normal-case tracking-normal mt-2">
+            Powered by{' '}
+            <a
+              href="https://kingdev-aa.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-emerald-600 hover:text-emerald-700 font-semibold underline transition duration-150"
+            >
+              KingsleyDev
+            </a>
+          </div>
         </footer>
       </div>
     )
@@ -135,7 +146,18 @@ export function RegistrationSuccessPage() {
           <p className="text-xs text-slate-400 mt-1">Acquiring security clearance data…</p>
         </div>
         <footer className="text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-10">
-          EXERCISE RESOLUTE SYNERGY 2026 &mdash; Ghana Armed Forces
+          <div>EXERCISE RESOLUTE SYNERGY 2026 &mdash; Ghana Armed Forces</div>
+          <div className="text-[9px] text-slate-400 font-medium normal-case tracking-normal mt-2">
+            Powered by{' '}
+            <a
+              href="https://kingdev-aa.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-emerald-600 hover:text-emerald-700 font-semibold underline transition duration-150"
+            >
+              KingsleyDev
+            </a>
+          </div>
         </footer>
       </div>
     )
@@ -294,6 +316,17 @@ export function RegistrationSuccessPage() {
       <div className="text-center text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-10 space-y-1 print:hidden">
         <div>Exercise Resolute Synergy 2026</div>
         <div className="text-[8px] text-slate-300">Prepared. Committed. Resolute.</div>
+        <div className="text-[9px] text-slate-400 font-medium normal-case tracking-normal mt-2">
+          Powered by{' '}
+          <a
+            href="https://kingdev-aa.vercel.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-emerald-600 hover:text-emerald-700 font-semibold underline transition duration-150"
+          >
+            KingsleyDev
+          </a>
+        </div>
       </div>
 
     </div>

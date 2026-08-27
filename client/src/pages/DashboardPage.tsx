@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Copy, CheckCheck, ExternalLink, Database, Loader2, Search, ShieldCheck, Users, RefreshCw, ArrowUp, AlertCircle, CheckCircle2, XCircle, X } from 'lucide-react'
+import { Copy, CheckCheck, ExternalLink, Database, Loader2, Search, ShieldCheck, Users, RefreshCw, ArrowUp, AlertCircle, CheckCircle2, XCircle, X, Trash2 } from 'lucide-react'
 import { StatusBadge } from '../components/StatusBadge'
-import { getStats, listPersonnel, subscribeToEntryControl, updateEntryControl, bulkCheckInPersonnel } from '../services/firebase'
+import { getStats, listPersonnel, subscribeToEntryControl, updateEntryControl, bulkCheckInPersonnel, deletePersonnel } from '../services/firebase'
 import type { Personnel, PersonnelStatus, Stats, EntryControlSettings } from '../types/personnel'
 import { formatDate } from '../utils/format'
 import { getBaseUrl } from '../utils/url'
@@ -25,6 +25,10 @@ export function DashboardPage() {
     | { type: 'result'; success: boolean; message: string }
     | null
   const [bulkModal, setBulkModal] = useState<BulkModalState>(null)
+
+  // Delete modal state
+  const [deleteModal, setDeleteModal] = useState<{ person: Personnel } | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const handleBulkConfirmSelected = () => {
     if (selectedIds.length === 0 || bulkProcessing) return
@@ -71,6 +75,22 @@ export function DashboardPage() {
       setBulkModal({ type: 'result', success: false, message: 'Error confirming entry: ' + (err instanceof Error ? err.message : String(err)) })
     } finally {
       setBulkProcessing(false)
+    }
+  }
+
+  const handleDeletePersonnel = async () => {
+    if (!deleteModal || deleting) return
+    setDeleting(true)
+    try {
+      await deletePersonnel(deleteModal.person.id)
+      setDeleteModal(null)
+      setSelectedIds(prev => prev.filter(id => id !== deleteModal.person.id))
+      await load()
+    } catch (err) {
+      console.error(err)
+      alert('Failed to delete: ' + (err instanceof Error ? err.message : String(err)))
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -528,6 +548,7 @@ export function DashboardPage() {
                   <th className="px-6 py-3.5 font-bold">Entry Status</th>
                   <th className="px-6 py-3.5 font-bold">Registered</th>
                   <th className="px-6 py-3.5 font-bold">Entered</th>
+                  <th className="px-6 py-3.5 font-bold w-14">Delete</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
@@ -590,6 +611,16 @@ export function DashboardPage() {
                     <td className="px-6 py-4"><StatusBadge status={person.status} /></td>
                     <td className="px-6 py-4 text-xs font-semibold text-slate-400">{formatDate(person.registeredAt)}</td>
                     <td className="px-6 py-4 text-xs font-semibold text-slate-400">{formatDate(person.enteredAt)}</td>
+                    <td className="px-4 py-4 text-center">
+                      <button
+                        type="button"
+                        title="Delete record"
+                        onClick={() => setDeleteModal({ person })}
+                        className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition duration-150 cursor-pointer"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -699,6 +730,52 @@ export function DashboardPage() {
                 className="mt-2 w-full rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-black text-white hover:bg-slate-700 transition cursor-pointer active:scale-95"
               >
                 Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete Confirmation Modal ── */}
+      {deleteModal && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => !deleting && setDeleteModal(null)} />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
+            <div className="flex items-start justify-between px-6 pt-6 pb-0">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-red-50 border border-red-200">
+                  <Trash2 size={18} className="text-red-600" />
+                </span>
+                <div>
+                  <p className="text-sm font-black text-slate-900 tracking-tight">Delete Record?</p>
+                  <p className="text-[11px] font-semibold text-slate-400 mt-0.5">This action cannot be undone</p>
+                </div>
+              </div>
+              <button onClick={() => !deleting && setDeleteModal(null)} className="text-slate-400 hover:text-slate-700 transition mt-0.5 cursor-pointer">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="px-6 py-5">
+              <p className="text-sm text-slate-600 leading-relaxed">
+                You are about to permanently delete the record for{' '}
+                <span className="font-black text-slate-900">{deleteModal.person.fullName}</span>{' '}
+                (<span className="font-mono text-xs">{deleteModal.person.serviceNumber}</span>). This cannot be reversed.
+              </p>
+            </div>
+            <div className="flex gap-2.5 px-6 pb-6">
+              <button
+                onClick={() => setDeleteModal(null)}
+                disabled={deleting}
+                className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black text-slate-700 hover:bg-slate-50 transition cursor-pointer active:scale-95 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeletePersonnel}
+                disabled={deleting}
+                className="flex-1 rounded-xl bg-red-600 px-4 py-2.5 text-xs font-black text-white hover:bg-red-700 transition cursor-pointer active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {deleting ? <><Loader2 size={13} className="animate-spin" /> Deleting…</> : <><Trash2 size={13} /> Delete Record</>}
               </button>
             </div>
           </div>
