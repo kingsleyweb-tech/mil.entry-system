@@ -3,6 +3,7 @@ import { AppShell } from './components/AppShell'
 import { DashboardPage } from './pages/DashboardPage'
 import { AdminRegistrationsPage } from './pages/AdminRegistrationsPage'
 import { ReportsPage } from './pages/ReportsPage'
+import { FormBuilderPage } from './pages/FormBuilderPage'
 import { RegistrationPage } from './pages/RegistrationPage'
 import { RegistrationSuccessPage } from './pages/RegistrationSuccessPage'
 import { RegistrationConfirmedPage } from './pages/RegistrationConfirmedPage'
@@ -73,6 +74,16 @@ export default function App() {
             <ProtectedRoute>
               <AppShell>
                 <ReportsPage />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/form-builder"
+          element={
+            <ProtectedRoute>
+              <AppShell>
+                <FormBuilderPage />
               </AppShell>
             </ProtectedRoute>
           }

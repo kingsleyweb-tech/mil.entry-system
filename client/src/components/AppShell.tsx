@@ -5,12 +5,17 @@ import {
   LogOut,
   FileText,
   BarChart3,
+  Sliders,
   Menu,
   X,
   Lock,
   Unlock,
   Sun,
   Moon,
+  Maximize,
+  Minimize,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react'
 import type React from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
@@ -27,6 +32,16 @@ export function AppShell({ children }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
   const { theme, toggleTheme } = useTheme()
+
+  // Sidebar collapse state
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('adminSidebarCollapsed') === 'true'
+  })
+
+  // Fullscreen state
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  // Mobile menu states
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [menuVisible, setMenuVisible] = useState(false)
   const [entryControl, setEntryControl] = useState<EntryControlSettings | null>(null)
@@ -40,14 +55,44 @@ export function AppShell({ children }: Props) {
     return () => unsubscribe()
   }, [])
 
-  // When route changes, close menu
+  // Listen for fullscreen change
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(!!document.fullscreenElement)
+    }
+    document.addEventListener('fullscreenchange', handleFsChange)
+    return () => document.removeEventListener('fullscreenchange', handleFsChange)
+  }, [])
+
+  // When route changes, close mobile menu
   useEffect(() => {
     closeMenu()
   }, [location.pathname])
 
+  const toggleSidebar = () => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev
+      localStorage.setItem('adminSidebarCollapsed', String(next))
+      return next
+    })
+  }
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.error('Error attempting to enable fullscreen:', err)
+      })
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch((err) => {
+          console.error('Error attempting to exit fullscreen:', err)
+        })
+      }
+    }
+  }
+
   const openMenu = () => {
     setMobileMenuOpen(true)
-    // Small delay so DOM mounts first, then trigger animation
     requestAnimationFrame(() => {
       requestAnimationFrame(() => setMenuVisible(true))
     })
@@ -98,6 +143,7 @@ export function AppShell({ children }: Props) {
     { to: '/registrations', label: 'Registrations', icon: FileText, iconColor: '#3b82f6' },
     { to: '/verify', label: 'Verify Entry', icon: ShieldCheck, iconColor: '#f59e0b' },
     { to: '/reports', label: 'Reports', icon: BarChart3, iconColor: '#a855f7' },
+    { to: '/form-builder', label: 'Form Builder', icon: Sliders, iconColor: '#ec4899' },
   ]
 
   const isDark = theme === 'dark'
@@ -128,17 +174,23 @@ export function AppShell({ children }: Props) {
             </div>
           </div>
         </div>
+
         <div className="flex items-center gap-2">
+          {/* Theme toggle */}
           <button
             type="button"
             onClick={toggleTheme}
             className="p-2 rounded-lg bg-zinc-900 border border-zinc-800 cursor-pointer"
             title="Toggle Theme"
           >
-            {isDark
-              ? <Sun size={18} className="text-amber-400" />
-              : <Moon size={18} className="text-indigo-400" />}
+            {isDark ? (
+              <Sun size={18} className="text-amber-400" />
+            ) : (
+              <Moon size={18} className="text-indigo-400" />
+            )}
           </button>
+
+          {/* Mobile menu trigger */}
           <button
             type="button"
             onClick={openMenu}
@@ -160,7 +212,6 @@ export function AppShell({ children }: Props) {
             transition: 'opacity 0.35s cubic-bezier(0.4,0,0.2,1)',
           }}
         >
-          {/* Inner container slides up */}
           <div
             className="flex flex-col h-full"
             style={{
@@ -168,7 +219,7 @@ export function AppShell({ children }: Props) {
               transition: 'transform 0.4s cubic-bezier(0.4,0,0.2,1)',
             }}
           >
-            {/* ── Drawer Header ── */}
+            {/* Drawer Header */}
             <div
               className={`flex items-center justify-between px-6 py-5 border-b ${
                 isDark ? 'border-zinc-800' : 'border-slate-200'
@@ -210,7 +261,7 @@ export function AppShell({ children }: Props) {
               </button>
             </div>
 
-            {/* ── Nav Links — Staggered, Large, Stylish ── */}
+            {/* Nav Links */}
             <nav className="flex-1 flex flex-col justify-center px-6 gap-1">
               {navItems.map((item, i) => {
                 const Icon = item.icon
@@ -222,7 +273,7 @@ export function AppShell({ children }: Props) {
                     onClick={closeMenu}
                     style={{
                       fontFamily: "'Bebas Neue', 'Oswald', sans-serif",
-                      fontSize: '2.6rem',
+                      fontSize: '2.4rem',
                       letterSpacing: '0.04em',
                       lineHeight: 1.15,
                       color: isActive
@@ -242,7 +293,6 @@ export function AppShell({ children }: Props) {
                           : 'rgba(0,0,0,0.05)'
                         : 'transparent',
                       transition: 'all 0.2s ease',
-                      // Stagger each item's entry
                       opacity: menuVisible ? 1 : 0,
                       transform: menuVisible ? 'translateX(0)' : 'translateX(-24px)',
                       transitionDelay: menuVisible ? `${0.12 + i * 0.07}s` : '0s',
@@ -251,7 +301,7 @@ export function AppShell({ children }: Props) {
                       transitionDuration: '0.4s',
                     }}
                   >
-                    <Icon size={28} style={{ color: item.iconColor, flexShrink: 0 }} />
+                    <Icon size={26} style={{ color: item.iconColor, flexShrink: 0 }} />
                     <span>{item.label}</span>
                     {isActive && (
                       <span
@@ -271,7 +321,7 @@ export function AppShell({ children }: Props) {
               })}
             </nav>
 
-            {/* ── Drawer Footer ── */}
+            {/* Drawer Footer */}
             <div
               className={`px-6 py-5 border-t ${
                 isDark ? 'border-zinc-800' : 'border-slate-200'
@@ -378,187 +428,265 @@ export function AppShell({ children }: Props) {
                   <LogOut size={20} style={{ color: '#ef4444' }} />
                 </button>
               </div>
-
-              <p
-                className="text-center mt-4"
-                style={{
-                  fontSize: '0.65rem',
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
-                  color: isDark ? '#3f3f46' : '#cbd5e1',
-                  fontFamily: "'Oswald', sans-serif",
-                }}
-              >
-                © Exercise Resolute Solution
-              </p>
             </div>
           </div>
         </div>
       )}
 
       {/* ── Desktop Sidebar ── */}
-      <aside
-        className={`hidden md:flex sticky top-0 z-40 w-64 border-r flex-col justify-between shrink-0 h-screen ${
-          isDark
-            ? 'bg-[#000000] text-slate-100 border-zinc-800'
-            : 'bg-[#0A1128] text-slate-200 border-slate-800/80'
-        }`}
-      >
-        <div className="flex flex-col flex-1 overflow-y-auto px-4 py-6">
-          {/* Logo */}
-          <div className="flex items-start gap-3.5 px-2 mb-6">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-zinc-900 border border-zinc-700/60 p-1.5 shadow-md">
-              <img src={gafLogo} alt="GAF Logo" className="w-full h-full object-contain" />
-            </div>
-            <div>
-              <h1 className="text-xs font-black text-white tracking-wider uppercase leading-snug">
-                EXERCISE<br />RESOLUTE SOLUTION
-              </h1>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                PERSONNEL REGISTRATION SYSTEM
-              </p>
-            </div>
-          </div>
-
-          {/* Theme Toggle */}
-          <div className="px-2 mb-4">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold border transition duration-150 cursor-pointer ${
-                isDark
-                  ? 'bg-[#121215] border-zinc-800 text-white hover:bg-zinc-800'
-                  : 'bg-slate-900/80 border-slate-800 text-slate-300 hover:bg-slate-800'
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                {isDark
-                  ? <Sun size={16} className="text-amber-400" />
-                  : <Moon size={16} className="text-indigo-400" />}
-                <span className="text-white">{isDark ? 'Light Mode' : 'Dark Mode'}</span>
-              </span>
-              <span
-                className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${
-                  isDark
-                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                    : 'bg-slate-800 text-slate-300 border-slate-700'
-                }`}
-              >
-                {theme}
-              </span>
-            </button>
-          </div>
-
-          {/* Nav */}
-          <nav className="space-y-1.5">
-            {navItems.map((item) => {
-              const Icon = item.icon
-              const isActive = location.pathname === item.to
-              return (
-                <NavLink
-                  key={item.label}
-                  to={item.to}
-                  className={`group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 ${
-                    isActive
-                      ? isDark
-                        ? 'bg-[#121215] text-white border border-emerald-500/60 shadow-lg'
-                        : 'bg-[#142C23] text-emerald-400 border border-emerald-500/30 shadow-inner'
-                      : 'text-slate-300 hover:text-white hover:bg-zinc-900/80'
-                  }`}
-                >
-                  <Icon size={18} style={{ color: item.iconColor }} />
-                  <span className="text-white">{item.label}</span>
-                  {isActive && (
-                    <span className="ml-auto w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  )}
-                </NavLink>
-              )
-            })}
-          </nav>
-
-          {/* Entry Control Widget */}
-          <div className="mt-auto pt-6">
-            <div
-              className={`rounded-2xl border p-4 text-left shadow-lg ${
-                isDark ? 'bg-[#0E0E11] border-zinc-800' : 'bg-[#0F1935] border-slate-800'
-              }`}
-            >
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">
-                ENTRY VERIFICATION
-              </div>
-              <div className="flex items-center gap-2 mb-2">
-                <span
-                  className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                    entryControl?.entryEnabled !== false
-                      ? 'bg-emerald-500 animate-pulse'
-                      : 'bg-red-500'
-                  }`}
-                />
-                <span
-                  className={`text-xs font-extrabold tracking-wider ${
-                    entryControl?.entryEnabled !== false ? 'text-emerald-400' : 'text-red-400'
-                  }`}
-                >
-                  {entryControl?.entryEnabled !== false ? 'ACTIVE' : 'DISABLED'}
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-300 font-medium leading-relaxed mb-3">
-                {entryControl?.entryEnabled !== false
-                  ? 'Officials can verify and confirm entry.'
-                  : 'Entry verification is currently disabled.'}
-              </p>
-              <button
-                type="button"
-                onClick={handleToggleEntry}
-                disabled={updatingControl}
-                className={`w-full flex items-center justify-center gap-2 rounded-xl py-2 px-3 text-xs font-bold border transition duration-150 cursor-pointer disabled:opacity-50 ${
-                  isDark
-                    ? 'border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-white'
-                    : 'border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-slate-200'
-                }`}
-              >
-                {entryControl?.entryEnabled !== false ? (
-                  <><Lock size={13} className="text-red-400" /><span className="text-white">Disable Entry</span></>
-                ) : (
-                  <><Unlock size={13} className="text-emerald-400" /><span className="text-white">Enable Entry</span></>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Profile Footer */}
-        <div
-          className={`border-t p-4 flex items-center justify-between ${
-            isDark ? 'bg-[#000000] border-zinc-800' : 'bg-[#040712] border-slate-800/80'
+      {!sidebarCollapsed && (
+        <aside
+          className={`hidden md:flex sticky top-0 z-40 w-64 border-r flex-col justify-between shrink-0 h-screen transition-all duration-300 ${
+            isDark
+              ? 'bg-[#000000] text-slate-100 border-zinc-800'
+              : 'bg-[#0A1128] text-slate-200 border-slate-800/80'
           }`}
         >
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800 border border-zinc-700 text-xs font-black text-white">
-              {adminName.slice(0, 2).toUpperCase()}
+          <div className="flex flex-col flex-1 overflow-y-auto px-4 py-6">
+            
+            {/* Header & Sidebar Collapse Trigger */}
+            <div className="flex items-start justify-between gap-2 px-2 mb-6">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-900 border border-zinc-700/60 p-1.5 shadow-md">
+                  <img src={gafLogo} alt="GAF Logo" className="w-full h-full object-contain" />
+                </div>
+                <div>
+                  <h1 className="text-xs font-black text-white tracking-wider uppercase leading-snug">
+                    EXERCISE<br />RESOLUTE SOLUTION
+                  </h1>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                    PERSONNEL SYSTEM
+                  </p>
+                </div>
+              </div>
+
+              {/* Hide Sidebar Button */}
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-zinc-800/80 transition cursor-pointer shrink-0 mt-0.5"
+                title="Hide Sidebar"
+              >
+                <PanelLeftClose size={18} />
+              </button>
             </div>
-            <div className="overflow-hidden">
-              <div className="text-xs font-bold text-white truncate">{adminName}</div>
-              <div className="text-[10px] font-semibold text-slate-400 truncate">System Administrator</div>
+
+            {/* Theme Toggle */}
+            <div className="px-2 mb-4">
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold border transition duration-150 cursor-pointer ${
+                  isDark
+                    ? 'bg-[#121215] border-zinc-800 text-white hover:bg-zinc-800'
+                    : 'bg-slate-900/80 border-slate-800 text-slate-300 hover:bg-slate-800'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  {isDark
+                    ? <Sun size={16} className="text-amber-400" />
+                    : <Moon size={16} className="text-indigo-400" />}
+                  <span className="text-white">{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+                </span>
+                <span
+                  className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${
+                    isDark
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                      : 'bg-slate-800 text-slate-300 border-slate-700'
+                  }`}
+                >
+                  {theme}
+                </span>
+              </button>
+            </div>
+
+            {/* Nav Links */}
+            <nav className="space-y-1.5">
+              {navItems.map((item) => {
+                const Icon = item.icon
+                const isActive = location.pathname === item.to
+                return (
+                  <NavLink
+                    key={item.label}
+                    to={item.to}
+                    className={`group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 ${
+                      isActive
+                        ? isDark
+                          ? 'bg-[#121215] text-white border border-emerald-500/60 shadow-lg'
+                          : 'bg-[#142C23] text-emerald-400 border border-emerald-500/30 shadow-inner'
+                        : 'text-slate-300 hover:text-white hover:bg-zinc-900/80'
+                    }`}
+                  >
+                    <Icon size={18} style={{ color: item.iconColor }} />
+                    <span className="text-white">{item.label}</span>
+                    {isActive && (
+                      <span className="ml-auto w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    )}
+                  </NavLink>
+                )
+              })}
+            </nav>
+
+            {/* Entry Control Widget */}
+            <div className="mt-auto pt-6">
+              <div
+                className={`rounded-2xl border p-4 text-left shadow-lg ${
+                  isDark ? 'bg-[#0E0E11] border-zinc-800' : 'bg-[#0F1935] border-slate-800'
+                }`}
+              >
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">
+                  ENTRY VERIFICATION
+                </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span
+                    className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                      entryControl?.entryEnabled !== false
+                        ? 'bg-emerald-500 animate-pulse'
+                        : 'bg-red-500'
+                    }`}
+                  />
+                  <span
+                    className={`text-xs font-extrabold tracking-wider ${
+                      entryControl?.entryEnabled !== false ? 'text-emerald-400' : 'text-red-400'
+                    }`}
+                  >
+                    {entryControl?.entryEnabled !== false ? 'ACTIVE' : 'DISABLED'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-300 font-medium leading-relaxed mb-3">
+                  {entryControl?.entryEnabled !== false
+                    ? 'Officials can verify entry.'
+                    : 'Entry verification disabled.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleToggleEntry}
+                  disabled={updatingControl}
+                  className={`w-full flex items-center justify-center gap-2 rounded-xl py-2 px-3 text-xs font-bold border transition duration-150 cursor-pointer disabled:opacity-50 ${
+                    isDark
+                      ? 'border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-white'
+                      : 'border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-slate-200'
+                  }`}
+                >
+                  {entryControl?.entryEnabled !== false ? (
+                    <><Lock size={13} className="text-red-400" /><span className="text-white">Disable Entry</span></>
+                  ) : (
+                    <><Unlock size={13} className="text-emerald-400" /><span className="text-white">Enable Entry</span></>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={handleLogout}
-            title="Logout"
-            className="p-2 text-slate-400 hover:text-white hover:bg-zinc-800 rounded-lg transition cursor-pointer"
-          >
-            <LogOut size={16} className="text-red-400" />
-          </button>
-        </div>
-      </aside>
 
-      {/* ── Main Content ── */}
+          {/* Profile Footer */}
+          <div
+            className={`border-t p-4 flex items-center justify-between ${
+              isDark ? 'bg-[#000000] border-zinc-800' : 'bg-[#040712] border-slate-800/80'
+            }`}
+          >
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800 border border-zinc-700 text-xs font-black text-white">
+                {adminName.slice(0, 2).toUpperCase()}
+              </div>
+              <div className="overflow-hidden">
+                <div className="text-xs font-bold text-white truncate">{adminName}</div>
+                <div className="text-[10px] font-semibold text-slate-400 truncate">System Administrator</div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              title="Logout"
+              className="p-2 text-slate-400 hover:text-white hover:bg-zinc-800 rounded-lg transition cursor-pointer"
+            >
+              <LogOut size={16} className="text-red-400" />
+            </button>
+          </div>
+        </aside>
+      )}
+
+      {/* ── Main Content Area with Desktop Top Bar ── */}
       <div
         className={`flex-1 flex flex-col min-w-0 min-h-screen transition-colors duration-200 ${
           isDark ? 'bg-[#000000] text-white' : 'bg-[#F8FAFC] text-slate-900'
         }`}
       >
+        {/* Desktop Top Control Bar */}
+        <header
+          className={`hidden md:flex items-center justify-between px-6 py-3 border-b sticky top-0 z-30 transition-colors duration-200 ${
+            isDark
+              ? 'bg-[#09090b]/90 border-zinc-800/80 backdrop-blur-md'
+              : 'bg-white/90 border-slate-200/80 backdrop-blur-md'
+          }`}
+        >
+          {/* Left: Sidebar Toggle + Brand snippet */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              className={`p-2 rounded-xl border transition cursor-pointer flex items-center gap-2 text-xs font-extrabold ${
+                isDark
+                  ? 'bg-zinc-900 border-zinc-800 text-slate-200 hover:bg-zinc-800'
+                  : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+              }`}
+              title={sidebarCollapsed ? 'Show Sidebar' : 'Hide Sidebar'}
+            >
+              {sidebarCollapsed ? (
+                <>
+                  <PanelLeftOpen size={17} className="text-emerald-500" />
+                  <span>Show Sidebar</span>
+                </>
+              ) : (
+                <>
+                  <PanelLeftClose size={17} className="text-slate-400" />
+                  <span>Hide Sidebar</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Right: Fullscreen + Theme + Quick actions */}
+          <div className="flex items-center gap-2.5">
+            {/* Fullscreen Button */}
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                isDark
+                  ? 'bg-zinc-900 border-zinc-800 text-slate-200 hover:bg-zinc-800'
+                  : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+              }`}
+              title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+            >
+              {isFullscreen ? (
+                <>
+                  <Minimize size={16} className="text-amber-400" />
+                  <span>Exit Fullscreen</span>
+                </>
+              ) : (
+                <>
+                  <Maximize size={16} className="text-emerald-500" />
+                  <span>Fullscreen</span>
+                </>
+              )}
+            </button>
+
+            {/* Quick Theme Toggle */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className={`p-2 rounded-xl border transition cursor-pointer ${
+                isDark
+                  ? 'bg-zinc-900 border-zinc-800 text-amber-400 hover:bg-zinc-800'
+                  : 'bg-slate-100 border-slate-200 text-indigo-600 hover:bg-slate-200'
+              }`}
+              title="Toggle Light / Dark Mode"
+            >
+              {isDark ? <Sun size={17} /> : <Moon size={17} />}
+            </button>
+          </div>
+        </header>
+
         <main className="flex-1">{children}</main>
       </div>
     </div>

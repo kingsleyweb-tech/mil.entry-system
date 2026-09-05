@@ -17,6 +17,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '../firebase'
 import type { Personnel, PersonnelForm, PersonnelStatus, Stats, VerifyResponse, EntryControlSettings } from '../types/personnel'
+import { type FormConfig, DEFAULT_FORM_CONFIG } from '../types/formConfig'
 import { getBaseUrl } from '../utils/url'
 
 const COLLECTION = 'personnel'
@@ -529,4 +530,63 @@ export async function importPersonnel(
 
   return result
 }
+
+// ── Form Builder Settings ───────────────────────────────────────────────────
+
+export function subscribeToFormConfig(callback: (config: FormConfig) => void): () => void {
+  const docRef = doc(db, 'systemSettings', 'registrationForm')
+  return onSnapshot(
+    docRef,
+    (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data() as Partial<FormConfig>
+        // Deep merge / fallback with DEFAULT_FORM_CONFIG so missing fields don't crash the form
+        const merged: FormConfig = {
+          formContent: {
+            ...DEFAULT_FORM_CONFIG.formContent,
+            ...(data.formContent || {}),
+          },
+          fields: {
+            ...DEFAULT_FORM_CONFIG.fields,
+            ...(data.fields || {}),
+          },
+          statusOptions:
+            Array.isArray(data.statusOptions) && data.statusOptions.length > 0
+              ? data.statusOptions
+              : DEFAULT_FORM_CONFIG.statusOptions,
+          armOfServiceOptions:
+            Array.isArray(data.armOfServiceOptions) && data.armOfServiceOptions.length > 0
+              ? data.armOfServiceOptions
+              : DEFAULT_FORM_CONFIG.armOfServiceOptions,
+          ranksByArm: {
+            ...DEFAULT_FORM_CONFIG.ranksByArm,
+            ...(data.ranksByArm || {}),
+          },
+          otherSettings: {
+            ...DEFAULT_FORM_CONFIG.otherSettings,
+            ...(data.otherSettings || {}),
+          },
+        }
+        callback(merged)
+      } else {
+        callback(DEFAULT_FORM_CONFIG)
+      }
+    },
+    (err) => {
+      console.error('Error listening to registration form config:', err)
+      callback(DEFAULT_FORM_CONFIG)
+    }
+  )
+}
+
+export async function saveFormConfig(config: FormConfig): Promise<void> {
+  const docRef = doc(db, 'systemSettings', 'registrationForm')
+  await setDoc(docRef, config, { merge: false })
+}
+
+export async function resetFormConfigToDefaults(): Promise<void> {
+  const docRef = doc(db, 'systemSettings', 'registrationForm')
+  await setDoc(docRef, DEFAULT_FORM_CONFIG, { merge: false })
+}
+
 
