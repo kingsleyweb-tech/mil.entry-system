@@ -1,6 +1,8 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from './components/AppShell'
 import { DashboardPage } from './pages/DashboardPage'
+import { AdminRegistrationsPage } from './pages/AdminRegistrationsPage'
+import { ReportsPage } from './pages/ReportsPage'
 import { RegistrationPage } from './pages/RegistrationPage'
 import { RegistrationSuccessPage } from './pages/RegistrationSuccessPage'
 import { RegistrationConfirmedPage } from './pages/RegistrationConfirmedPage'
@@ -9,11 +11,19 @@ import { LoginPage } from './pages/LoginPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { QrPassPage } from './pages/QrPassPage'
 
+function DefaultRedirect() {
+  const token = localStorage.getItem('adminToken')
+  if (token) {
+    return <Navigate to="/dashboard" replace />
+  }
+  return <Navigate to="/register" replace />
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* ── Personnel-facing routes (no nav bar) ── */}
+        {/* Public Personnel-Facing Routes */}
         <Route path="/register" element={<RegistrationPage />} />
         <Route
           path="/registration-success/:registrationId"
@@ -26,13 +36,23 @@ export default function App() {
         <Route path="/pass/:registrationId" element={<QrPassPage />} />
         <Route path="/login" element={<LoginPage />} />
 
-        {/* ── Admin routes (with nav shell & protected) ── */}
+        {/* Protected Admin Routes */}
         <Route
           path="/dashboard"
           element={
             <ProtectedRoute>
               <AppShell>
                 <DashboardPage />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/registrations"
+          element={
+            <ProtectedRoute>
+              <AppShell>
+                <AdminRegistrationsPage />
               </AppShell>
             </ProtectedRoute>
           }
@@ -47,13 +67,21 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/reports"
+          element={
+            <ProtectedRoute>
+              <AppShell>
+                <ReportsPage />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
 
-        {/* ── Default ── */}
-        <Route path="/" element={<Navigate to="/register" replace />} />
-        <Route path="*" element={<Navigate to="/register" replace />} />
+        {/* Default & Catch-all Fallbacks */}
+        <Route path="/" element={<DefaultRedirect />} />
+        <Route path="*" element={<DefaultRedirect />} />
       </Routes>
     </BrowserRouter>
   )
 }
-
-

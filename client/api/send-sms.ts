@@ -21,7 +21,6 @@ export default async function handler(req: Req, res: Res) {
     return res.status(400).json({ error: 'Missing phone or registrationId' })
   }
 
-  // Load gonlinesites.com credentials from environment variables
   const apiKey = process.env.SMS_API_KEY
   const senderId = process.env.SMS_SENDER_ID || 'EXRESOLUTE'
   console.log('[send-sms] apiKey present:', Boolean(apiKey), '| senderId:', senderId)
@@ -43,7 +42,6 @@ export default async function handler(req: Req, res: Res) {
   const message = `EXERCISE RESOLUTE SYNERGY 2026: Registration successful. Unique ID: ${registrationId}. Download/Print your QR code card here: ${successUrl || ''}`
 
   try {
-    // gonlinesites.com SMS Gateway — GET request with query parameters
     const gatewayUrl = `https://sms.gonlinesites.com/app/sms/api?action=send-sms&api_key=${encodeURIComponent(apiKey)}&to=${recipient}&from=${encodeURIComponent(senderId)}&sms=${encodeURIComponent(message)}`
 
     console.log('[send-sms] Dispatching request to gonlinesites.com gateway...')

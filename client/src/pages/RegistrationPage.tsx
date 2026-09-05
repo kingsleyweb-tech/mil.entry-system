@@ -459,7 +459,7 @@ export function RegistrationPage() {
             </FieldWrap>
           )}
 
-          {/* Unit / Department */}
+
           <FieldWrap label="Unit / Department" required error={errors.unit}>
             <InputWithIcon icon={<Building size={16} />}
               id="unit" type="text" placeholder="Enter your unit / department"

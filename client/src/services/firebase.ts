@@ -2,6 +2,7 @@ import {
   collection,
   doc,
   getDocs,
+  getDoc,
   addDoc,
   updateDoc,
   query,
@@ -214,12 +215,10 @@ export async function checkInPersonnel(
 }
 
 export async function listPersonnel(search: string, status: PersonnelStatus | 'ALL'): Promise<{ personnel: Personnel[] }> {
-  // Query all documents sorted by registeredAt descending (default Firestore single-field index)
+  
   const q = query(collection(db, COLLECTION), orderBy('registeredAt', 'desc'))
   const snap = await getDocs(q)
   let list = snap.docs.map((d) => docToPersonnel(d.id, d.data()))
-
-  // Filter by status in-memory to prevent Firestore composite index requirements
   if (status !== 'ALL') {
     list = list.filter((p) => p.status === status)
   }
@@ -325,3 +324,209 @@ export async function bulkCheckInPersonnel(personnelList: Personnel[]): Promise<
 export async function deletePersonnel(docId: string): Promise<void> {
   await deleteDoc(doc(db, COLLECTION, docId))
 }
+
+// ── Edit Personnel ────────────────────────────────────────────────────────────
+
+/**
+ * Updates a personnel document's editable fields.
+ * Deliberately excludes registrationId and serviceNumber to prevent accidental
+ * corruption of unique identifiers.  Entry/verification fields (enteredAt,
+ * verificationCount, lastVerificationAt) are not passed by the edit form so
+ * they are also left intact.
+ */
+export async function updatePersonnel(
+  docId: string,
+  fields: {
+    fullName?: string
+    armOfService?: string
+    rank?: string
+    exerciseStatus?: string
+    unit?: string
+    gender?: string
+    phone?: string
+    email?: string
+    appointment?: string
+    notes?: string
+    status?: PersonnelStatus
+  },
+): Promise<void> {
+  const docRef = doc(db, COLLECTION, docId)
+  const cleanFields = Object.fromEntries(
+    Object.entries(fields).filter(([_, v]) => v !== undefined)
+  )
+  await updateDoc(docRef, cleanFields)
+}
+
+// ── Export / Import types ─────────────────────────────────────────────────────
+
+/** A serialised Firestore Timestamp that survives JSON round-trip. */
+export type SerialisedTimestamp = {
+  _type: 'Timestamp'
+  seconds: number
+  nanoseconds: number
+}
+
+/** One personnel record as it appears in an export file. */
+export type PersonnelExportRecord = {
+  _docId: string
+  [key: string]: unknown
+}
+
+/** Top-level shape of the exported JSON file. */
+export type PersonnelExportFile = {
+  _exportVersion: 1
+  _exportedAt: string
+  _collection: string
+  records: PersonnelExportRecord[]
+}
+
+// ── Export ────────────────────────────────────────────────────────────────────
+
+function serialiseValue(value: unknown): unknown {
+  if (value instanceof Timestamp) {
+    return { _type: 'Timestamp', seconds: value.seconds, nanoseconds: value.nanoseconds } satisfies SerialisedTimestamp
+  }
+  if (Array.isArray(value)) return value.map(serialiseValue)
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, serialiseValue(v)]),
+    )
+  }
+  return value
+}
+
+/**
+ * Fetches every document in the personnel collection (no pagination) and
+ * returns a structured export object ready to be serialised as JSON.
+ */
+export async function exportAllPersonnel(): Promise<PersonnelExportFile> {
+  const snap = await getDocs(collection(db, COLLECTION))
+  const records: PersonnelExportRecord[] = snap.docs.map((d) => ({
+    _docId: d.id,
+    ...Object.fromEntries(
+      Object.entries(d.data()).map(([k, v]) => [k, serialiseValue(v)]),
+    ),
+  }))
+  return {
+    _exportVersion: 1,
+    _exportedAt: new Date().toISOString(),
+    _collection: COLLECTION,
+    records,
+  }
+}
+
+// ── Import ────────────────────────────────────────────────────────────────────
+
+function deserialiseValue(value: unknown): unknown {
+  if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+    const obj = value as Record<string, unknown>
+    if (obj._type === 'Timestamp' && typeof obj.seconds === 'number') {
+      return new Timestamp(obj.seconds as number, (obj.nanoseconds as number) ?? 0)
+    }
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => [k, deserialiseValue(v)]),
+    )
+  }
+  if (Array.isArray(value)) return value.map(deserialiseValue)
+  return value
+}
+
+export type ImportMode = 'skip' | 'overwrite'
+
+export type ImportResult = {
+  imported: number
+  skipped: number
+  failed: number
+  errors: string[]
+}
+
+/**
+ * Imports personnel records from a previously exported file.
+ *
+ * - mode 'skip'      → documents whose ID already exists are left unchanged.
+ * - mode 'overwrite' → existing documents are fully replaced (merge: false).
+ *
+ * Records are written in chunks of 499 to stay within Firestore's batch limit.
+ * onProgress is called after each chunk with (completed, total).
+ */
+export async function importPersonnel(
+  records: PersonnelExportRecord[],
+  mode: ImportMode,
+  onProgress?: (done: number, total: number) => void,
+): Promise<ImportResult> {
+  const result: ImportResult = { imported: 0, skipped: 0, failed: 0, errors: [] }
+  const CHUNK = 499
+
+  for (let i = 0; i < records.length; i += CHUNK) {
+    const chunk = records.slice(i, i + CHUNK)
+    const batch = writeBatch(db)
+    const pendingIds: string[] = []
+
+    for (const record of chunk) {
+      try {
+        const { _docId, ...rest } = record
+        if (!_docId || typeof _docId !== 'string') {
+          result.failed++
+          result.errors.push(`Record missing _docId at index ${i + chunk.indexOf(record)}`)
+          continue
+        }
+
+        const docRef = doc(db, COLLECTION, _docId)
+
+        if (mode === 'skip') {
+          // We resolve existence checks below, after collecting all refs
+          pendingIds.push(_docId)
+          // Temporarily store serialised data for later
+          ;(docRef as unknown as { _importData?: unknown })._importData = rest
+        } else {
+          // overwrite — reconstruct Timestamps and write
+          const restored = Object.fromEntries(
+            Object.entries(rest).map(([k, v]) => [k, deserialiseValue(v)]),
+          )
+          batch.set(docRef, restored, { merge: false })
+        }
+      } catch (err) {
+        result.failed++
+        result.errors.push(String(err))
+      }
+    }
+
+    if (mode === 'skip' && pendingIds.length > 0) {
+      // Check which docs already exist (sequential reads — Firestore doesn't
+      // support "get many by ID" in the JS client without separate calls)
+      const skipBatch = writeBatch(db)
+      let batchHasOps = false
+      for (const id of pendingIds) {
+        try {
+          const record = chunk.find((r) => r._docId === id)
+          if (!record) continue
+          const { _docId, ...rest } = record
+          const docRef = doc(db, COLLECTION, _docId as string)
+          const existing = await getDoc(docRef)
+          if (existing.exists()) {
+            result.skipped++
+          } else {
+            const restored = Object.fromEntries(
+              Object.entries(rest).map(([k, v]) => [k, deserialiseValue(v)]),
+            )
+            skipBatch.set(docRef, restored)
+            batchHasOps = true
+            result.imported++
+          }
+        } catch (err) {
+          result.failed++
+          result.errors.push(String(err))
+        }
+      }
+      if (batchHasOps) await skipBatch.commit()
+    } else if (mode === 'overwrite') {
+      await batch.commit()
+      result.imported += chunk.length - result.failed
+    }
+
+    onProgress?.(Math.min(i + CHUNK, records.length), records.length)
+  }
+
+  return result
+}
+
