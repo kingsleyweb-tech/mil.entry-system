@@ -256,8 +256,8 @@ export function RegistrationPage() {
           <div className="absolute w-28 h-28 border-4 border-t-emerald-500 border-r-emerald-500/30 border-b-emerald-500/10 border-l-emerald-500/50 rounded-full animate-spin [animation-duration:1s]" />
           <div className="absolute w-24 h-24 border border-slate-800 rounded-full" />
           <img 
-            src={gafLogo} 
-            alt="GAF Emblem" 
+            src={formConfig.formContent.logoUrl || gafLogo} 
+            alt="Logo" 
             className="w-14 h-14 object-contain relative z-10 animate-pulse [animation-duration:2s]" 
           />
         </div>
@@ -298,7 +298,7 @@ export function RegistrationPage() {
 
       {/* ── Header ── */}
       <header className="flex flex-col items-center text-center mb-8">
-        <img src={gafLogo} alt="GAF Logo" className="w-16 h-16 object-contain pointer-events-none" />
+        <img src={formConfig.formContent.logoUrl || gafLogo} alt="Logo" className="w-16 h-16 object-contain pointer-events-none" />
         <div className="mt-3">
           <span className="text-[9px] tracking-[0.25em] font-black text-slate-400 uppercase block leading-none">Exercise</span>
           <h1 className="text-slate-800 font-black text-xl sm:text-2xl mt-1 uppercase tracking-wide leading-tight">

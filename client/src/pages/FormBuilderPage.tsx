@@ -17,6 +17,8 @@ import {
   Loader2,
   Send,
   Lock,
+  Upload,
+  Image as ImageIcon,
 } from 'lucide-react'
 import { subscribeToFormConfig, saveFormConfig, resetFormConfigToDefaults } from '../services/firebase'
 import type { FormConfig, OptionItem } from '../types/formConfig'
@@ -465,6 +467,77 @@ export function FormBuilderPage() {
               </div>
 
               <div className="space-y-4">
+                {/* Logo Management */}
+                <div className="p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ImageIcon size={16} className="text-emerald-500" />
+                      <label className="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                        Header Logo Image
+                      </label>
+                    </div>
+                    {config.formContent.logoUrl && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        Custom Logo Active
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center gap-4 pt-1">
+                    {/* Logo Preview Box */}
+                    <div className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 flex items-center justify-center p-2 shrink-0 shadow-inner">
+                      <img
+                        src={config.formContent.logoUrl || gafLogo}
+                        alt="Logo Preview"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+
+                    <div className="flex-1 space-y-2 text-center sm:text-left">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                        Upload your custom organization or exercise logo. Supported formats: PNG, SVG, JPG, WebP (Max 2MB).
+                      </p>
+
+                      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                        <label className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer shadow-sm active:scale-95">
+                          <Upload size={14} />
+                          <span>Upload New Logo</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (!file) return
+                              if (file.size > 2 * 1024 * 1024) {
+                                setErrorMsg('Image file size is too large. Please select an image under 2MB.')
+                                return
+                              }
+                              const reader = new FileReader()
+                              reader.onload = (ev) => {
+                                if (ev.target?.result) {
+                                  updateContent('logoUrl', ev.target.result as string)
+                                }
+                              }
+                              reader.readAsDataURL(file)
+                            }}
+                          />
+                        </label>
+
+                        {config.formContent.logoUrl && (
+                          <button
+                            type="button"
+                            onClick={() => updateContent('logoUrl', '')}
+                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 hover:bg-red-100 text-xs font-bold transition cursor-pointer active:scale-95"
+                          >
+                            <Trash2 size={14} />
+                            <span>Remove Custom Logo</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 <InputGroup
                   label="Form Main Title"
                   value={config.formContent.title}
@@ -1127,7 +1200,7 @@ function RegistrationFormPreview({ config }: { config: FormConfig }) {
       
       {/* Header */}
       <div className="text-center mb-6">
-        <img src={gafLogo} alt="GAF Logo" className="w-12 h-12 object-contain mx-auto mb-2" />
+        <img src={config.formContent.logoUrl || gafLogo} alt="Logo" className="w-12 h-12 object-contain mx-auto mb-2" />
         <span className="text-[8px] tracking-[0.2em] font-black text-slate-400 uppercase block leading-none">
           EXERCISE
         </span>

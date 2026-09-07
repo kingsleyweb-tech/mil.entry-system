@@ -24,6 +24,7 @@ export type FormContentConfig = {
   warningNoticeHeading: string
   warningNoticeText: string
   footerText: string
+  logoUrl?: string
 }
 
 export type FormConfig = {
@@ -48,6 +49,7 @@ export const DEFAULT_FORM_CONFIG: FormConfig = {
     warningNoticeText:
       'Ensure all information provided is accurate. Incorrect information may affect your verification and SMS delivery at the entrance.',
     footerText: 'Exercise Resolute Synergy 2026 — Ghana Armed Forces',
+    logoUrl: '',
   },
   fields: {
     fullName: {
