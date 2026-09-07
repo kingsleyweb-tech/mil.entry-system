@@ -20,6 +20,8 @@ export type Personnel = {
   enteredAt?: string
   verificationCount: number
   lastVerificationAt?: string
+  idCardNumber?: string
+  registrationYear?: number
 }
 
 export type PersonnelForm = {

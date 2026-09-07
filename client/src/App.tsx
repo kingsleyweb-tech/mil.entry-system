@@ -12,6 +12,8 @@ import { VerifyPage } from './pages/VerifyPage'
 import { LoginPage } from './pages/LoginPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { QrPassPage } from './pages/QrPassPage'
+import { YearlyArchivesPage } from './pages/YearlyArchivesPage'
+import { YearlyComparisonPage } from './pages/YearlyComparisonPage'
 
 function DefaultRedirect() {
   const token = localStorage.getItem('adminToken')
@@ -95,6 +97,27 @@ export default function App() {
             <ProtectedRoute>
               <AppShell>
                 <SettingsPage />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/archives"
+          element={
+            <ProtectedRoute>
+              <AppShell>
+                <YearlyArchivesPage />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/yearly-crosscheck"
+          element={
+            <ProtectedRoute>
+              <AppShell>
+                <YearlyComparisonPage />
               </AppShell>
             </ProtectedRoute>
           }

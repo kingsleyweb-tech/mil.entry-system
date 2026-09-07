@@ -33,6 +33,14 @@ function generateRegistrationId(): string {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function docToPersonnel(id: string, data: any): Personnel {
+  const registeredAtDate = data.registeredAt instanceof Timestamp
+    ? data.registeredAt.toDate()
+    : data.registeredAt ? new Date(data.registeredAt) : new Date()
+
+  const registrationYear = typeof data.registrationYear === 'number'
+    ? data.registrationYear
+    : registeredAtDate.getFullYear()
+
   return {
     id,
     registrationId: data.registrationId ?? '',
@@ -48,9 +56,8 @@ function docToPersonnel(id: string, data: any): Personnel {
     appointment: data.appointment ?? '',
     notes: data.notes ?? '',
     status: data.status ?? 'REGISTERED',
-    registeredAt: data.registeredAt instanceof Timestamp
-      ? data.registeredAt.toDate().toISOString()
-      : data.registeredAt ?? new Date().toISOString(),
+    registeredAt: registeredAtDate.toISOString(),
+    registrationYear,
     enteredAt: data.enteredAt instanceof Timestamp
       ? data.enteredAt.toDate().toISOString()
       : data.enteredAt ?? undefined,
@@ -76,20 +83,46 @@ async function sendSms(phone: string, registrationId: string) {
 }
 
 export async function registerPersonnel(form: PersonnelForm): Promise<{ personnel: Personnel }> {
-  // Check for duplicate service number
-  const dupSvcQ = query(collection(db, COLLECTION), where('serviceNumber', '==', form.serviceNumber.trim().toUpperCase()))
-  const dupSvcSnap = await getDocs(dupSvcQ)
-  if (!dupSvcSnap.empty) throw new Error('A personnel record with this service number already exists.')
+  const currentYear = new Date().getFullYear()
 
-  // Check for duplicate email address
-  const dupEmailQ = query(collection(db, COLLECTION), where('email', '==', form.email.trim().toLowerCase()))
-  const dupEmailSnap = await getDocs(dupEmailQ)
-  if (!dupEmailSnap.empty) throw new Error('This email address has already been used to register.')
+  // Helper to determine if a snapshot document belongs to the target registration year
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isDocInYear = (data: any, year: number) => {
+    if (typeof data.registrationYear === 'number') return data.registrationYear === year
+    if (data.registeredAt instanceof Timestamp) return data.registeredAt.toDate().getFullYear() === year
+    if (data.registeredAt) return new Date(data.registeredAt).getFullYear() === year
+    return true
+  }
 
-  // Check for duplicate phone number
-  const dupPhoneQ = query(collection(db, COLLECTION), where('phone', '==', form.phone.trim()))
-  const dupPhoneSnap = await getDocs(dupPhoneQ)
-  if (!dupPhoneSnap.empty) throw new Error('This phone number has already been used to register.')
+  // Check for duplicate service number in current year
+  if (form.serviceNumber?.trim()) {
+    const dupSvcQ = query(collection(db, COLLECTION), where('serviceNumber', '==', form.serviceNumber.trim().toUpperCase()))
+    const dupSvcSnap = await getDocs(dupSvcQ)
+    const hasSameYearDup = dupSvcSnap.docs.some((doc) => isDocInYear(doc.data(), currentYear))
+    if (hasSameYearDup) {
+      throw new Error(`A personnel record with service number "${form.serviceNumber.trim().toUpperCase()}" has already registered for ${currentYear}.`)
+    }
+  }
+
+  // Check for duplicate email address in current year
+  if (form.email?.trim()) {
+    const dupEmailQ = query(collection(db, COLLECTION), where('email', '==', form.email.trim().toLowerCase()))
+    const dupEmailSnap = await getDocs(dupEmailQ)
+    const hasSameYearDup = dupEmailSnap.docs.some((doc) => isDocInYear(doc.data(), currentYear))
+    if (hasSameYearDup) {
+      throw new Error(`The email address "${form.email.trim().toLowerCase()}" has already been used for ${currentYear} registration.`)
+    }
+  }
+
+  // Check for duplicate phone number in current year
+  if (form.phone?.trim()) {
+    const dupPhoneQ = query(collection(db, COLLECTION), where('phone', '==', form.phone.trim()))
+    const dupPhoneSnap = await getDocs(dupPhoneQ)
+    const hasSameYearDup = dupPhoneSnap.docs.some((doc) => isDocInYear(doc.data(), currentYear))
+    if (hasSameYearDup) {
+      throw new Error(`The phone number "${form.phone.trim()}" has already been used for ${currentYear} registration.`)
+    }
+  }
 
   const registrationId = generateRegistrationId()
   const now = new Date().toISOString()
@@ -106,6 +139,7 @@ export async function registerPersonnel(form: PersonnelForm): Promise<{ personne
     phone: form.phone.trim(),
     email: form.email.trim().toLowerCase(),
     registrationId,
+    registrationYear: currentYear,
     status: 'REGISTERED' as PersonnelStatus,
     registeredAt: serverTimestamp(),
     verificationCount: 0,
@@ -137,6 +171,7 @@ export async function registerPersonnel(form: PersonnelForm): Promise<{ personne
     notes: payload.notes as string | undefined,
     status: 'REGISTERED',
     registeredAt: now,
+    registrationYear: currentYear,
     verificationCount: 0,
   }
 

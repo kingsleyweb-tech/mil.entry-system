@@ -17,6 +17,8 @@ import {
   Minimize,
   PanelLeftClose,
   PanelLeftOpen,
+  FolderArchive,
+  GitCompare,
 } from 'lucide-react'
 import type React from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
@@ -138,6 +140,8 @@ export function AppShell({ children }: Props) {
     { to: '/registrations', label: 'Registrations', icon: FileText, iconColor: '#3b82f6' },
     { to: '/verify', label: 'Verify Entry', icon: ShieldCheck, iconColor: '#f59e0b' },
     { to: '/reports', label: 'Reports', icon: BarChart3, iconColor: '#a855f7' },
+    { to: '/archives', label: 'Yearly Archives', icon: FolderArchive, iconColor: '#16a34a' },
+    { to: '/yearly-crosscheck', label: 'Year Cross-Check', icon: GitCompare, iconColor: '#9333ea' },
     { to: '/form-builder', label: 'Form Builder', icon: Sliders, iconColor: '#ec4899' },
     { to: '/settings', label: 'Settings', icon: Settings, iconColor: '#06b6d4' },
   ]
