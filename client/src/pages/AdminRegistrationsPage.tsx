@@ -13,6 +13,7 @@ import {
 import { listPersonnel } from '../services/firebase'
 import type { Personnel } from '../types/personnel'
 import { StatusBadge } from '../components/StatusBadge'
+import { RegistrationLinkBanner } from '../components/RegistrationLinkBanner'
 import { formatDate } from '../utils/format'
 import { useTheme } from '../context/ThemeContext'
 
@@ -187,6 +188,9 @@ export function AdminRegistrationsPage() {
           <span>Refresh</span>
         </button>
       </div>
+
+      {/* ── Public Registration Link Banner ── */}
+      <RegistrationLinkBanner />
 
       {/* ── Category Navigation Tabs (Split by Arm of Service & Civilians) ── */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5">

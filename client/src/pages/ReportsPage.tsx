@@ -13,6 +13,7 @@ import { getStats, listPersonnel } from '../services/firebase'
 import type { Personnel, Stats } from '../types/personnel'
 import { formatDate } from '../utils/format'
 import { useTheme } from '../context/ThemeContext'
+import { RegistrationLinkBanner } from '../components/RegistrationLinkBanner'
 
 export function ReportsPage() {
   const { theme } = useTheme()
@@ -263,6 +264,9 @@ export function ReportsPage() {
           <span>Refresh Reports</span>
         </button>
       </div>
+
+      {/* ── Public Registration Link Banner ── */}
+      <RegistrationLinkBanner />
 
       {/* ── Top Metric Cards (5 Cards) ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
