@@ -4,6 +4,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { AdminRegistrationsPage } from './pages/AdminRegistrationsPage'
 import { ReportsPage } from './pages/ReportsPage'
 import { FormBuilderPage } from './pages/FormBuilderPage'
+import { SettingsPage } from './pages/SettingsPage'
 import { RegistrationPage } from './pages/RegistrationPage'
 import { RegistrationSuccessPage } from './pages/RegistrationSuccessPage'
 import { RegistrationConfirmedPage } from './pages/RegistrationConfirmedPage'
@@ -84,6 +85,16 @@ export default function App() {
             <ProtectedRoute>
               <AppShell>
                 <FormBuilderPage />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <AppShell>
+                <SettingsPage />
               </AppShell>
             </ProtectedRoute>
           }

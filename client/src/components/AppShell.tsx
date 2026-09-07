@@ -6,6 +6,7 @@ import {
   FileText,
   BarChart3,
   Sliders,
+  Settings,
   Menu,
   X,
   Lock,
@@ -20,7 +21,7 @@ import {
 import type React from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import gafLogo from '../assets/gaf.png'
-import { subscribeToEntryControl, updateEntryControl } from '../services/firebase'
+import { subscribeToEntryControl, updateEntryControl, subscribeToAdminProfile, type AdminProfileSettings, DEFAULT_ADMIN_PROFILE } from '../services/firebase'
 import type { EntryControlSettings } from '../types/personnel'
 import { useTheme } from '../context/ThemeContext'
 
@@ -45,14 +46,21 @@ export function AppShell({ children }: Props) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [menuVisible, setMenuVisible] = useState(false)
   const [entryControl, setEntryControl] = useState<EntryControlSettings | null>(null)
+  const [adminProfile, setAdminProfile] = useState<AdminProfileSettings>(DEFAULT_ADMIN_PROFILE)
   const [updatingControl, setUpdatingControl] = useState(false)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    const unsubscribe = subscribeToEntryControl((settings) => {
+    const unsubEntry = subscribeToEntryControl((settings) => {
       setEntryControl(settings)
     })
-    return () => unsubscribe()
+    const unsubProfile = subscribeToAdminProfile((profile) => {
+      setAdminProfile(profile)
+    })
+    return () => {
+      unsubEntry()
+      unsubProfile()
+    }
   }, [])
 
   // Listen for fullscreen change
@@ -109,21 +117,8 @@ export function AppShell({ children }: Props) {
     navigate('/login')
   }
 
-  const getAdminUsername = () => {
-    const token = localStorage.getItem('adminToken')
-    if (!token) return 'Admin'
-    if (token.startsWith('soko-auth-')) {
-      try {
-        const parts = token.split('-')
-        if (parts[2]) return atob(parts[2])
-      } catch {
-        return 'Admin'
-      }
-    }
-    return 'Admin'
-  }
-
-  const adminName = getAdminUsername()
+  const adminName = adminProfile.displayName || 'Admin'
+  const adminRole = adminProfile.role || 'System Administrator'
 
   const handleToggleEntry = async () => {
     if (updatingControl) return
@@ -144,6 +139,7 @@ export function AppShell({ children }: Props) {
     { to: '/verify', label: 'Verify Entry', icon: ShieldCheck, iconColor: '#f59e0b' },
     { to: '/reports', label: 'Reports', icon: BarChart3, iconColor: '#a855f7' },
     { to: '/form-builder', label: 'Form Builder', icon: Sliders, iconColor: '#ec4899' },
+    { to: '/settings', label: 'Settings', icon: Settings, iconColor: '#06b6d4' },
   ]
 
   const isDark = theme === 'dark'
@@ -389,7 +385,10 @@ export function AppShell({ children }: Props) {
 
               {/* Profile + Logout */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+                <div
+                  onClick={() => { closeMenu(); navigate('/settings') }}
+                  className="flex items-center gap-3 cursor-pointer group"
+                >
                   <div
                     style={{
                       width: '38px',
@@ -414,7 +413,7 @@ export function AppShell({ children }: Props) {
                       {adminName}
                     </div>
                     <div style={{ fontSize: '0.7rem', color: isDark ? '#71717a' : '#94a3b8' }}>
-                      System Administrator
+                      {adminRole}
                     </div>
                   </div>
                 </div>
@@ -584,13 +583,17 @@ export function AppShell({ children }: Props) {
               isDark ? 'bg-[#000000] border-zinc-800' : 'bg-[#040712] border-slate-800/80'
             }`}
           >
-            <div className="flex items-center gap-3 overflow-hidden">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800 border border-zinc-700 text-xs font-black text-white">
+            <div
+              onClick={() => navigate('/settings')}
+              className="flex items-center gap-3 overflow-hidden cursor-pointer group p-1.5 -m-1.5 rounded-xl hover:bg-zinc-900/80 transition duration-150"
+              title="Open Settings"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800 border border-zinc-700 text-xs font-black text-white group-hover:border-emerald-500 transition">
                 {adminName.slice(0, 2).toUpperCase()}
               </div>
               <div className="overflow-hidden">
-                <div className="text-xs font-bold text-white truncate">{adminName}</div>
-                <div className="text-[10px] font-semibold text-slate-400 truncate">System Administrator</div>
+                <div className="text-xs font-bold text-white truncate group-hover:text-emerald-400 transition">{adminName}</div>
+                <div className="text-[10px] font-semibold text-slate-400 truncate">{adminRole}</div>
               </div>
             </div>
             <button

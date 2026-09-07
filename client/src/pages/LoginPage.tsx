@@ -30,31 +30,14 @@ export function LoginPage() {
     setError('')
 
     try {
-      let data
-      if (import.meta.env.DEV) {
-        // In local development, check Firestore directly to avoid 404 from missing serverless routes
-        const { verifyAdminLocal } = await import('../services/firebase')
-        const result = await verifyAdminLocal(username, password)
-        if (!result.success) {
-          throw new Error('Invalid username or password')
-        }
-        data = { success: true, token: result.token }
-      } else {
-        const response = await fetch('/api/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password }),
-        })
-
-        data = await response.json()
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Authentication failed')
-        }
+      const { verifyAdminLocal } = await import('../services/firebase')
+      const result = await verifyAdminLocal(username, password)
+      if (!result.success) {
+        throw new Error('Invalid username or password')
       }
 
-      if (data.success && data.token) {
-        localStorage.setItem('adminToken', data.token)
+      if (result.success && result.token) {
+        localStorage.setItem('adminToken', result.token)
         navigate('/dashboard')
       } else {
         throw new Error('Authentication failed')

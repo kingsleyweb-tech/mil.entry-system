@@ -255,13 +255,80 @@ export async function getStats(): Promise<{ stats: Stats }> {
   }
 }
 
-export async function verifyAdminLocal(username: string, password: string): Promise<{ success: boolean; token?: string }> {
-  const allowedUsername = import.meta.env.VITE_DEV_ADMIN_USERNAME || 'SokoAerial'
-  const allowedPassword = import.meta.env.VITE_DEV_ADMIN_PASSWORD || 'soko123'
+export type AdminProfileSettings = {
+  displayName: string
+  role: string
+  username: string
+  password?: string
+  updatedAt?: string
+  updatedBy?: string
+}
 
-  if (username.trim().toLowerCase() === allowedUsername.toLowerCase() && password === allowedPassword) {
-    return { success: true, token: `soko-auth-local-${Date.now()}` }
+export const DEFAULT_ADMIN_PROFILE: AdminProfileSettings = {
+  displayName: 'Admin',
+  role: 'System Administrator',
+  username: 'SokoAerial',
+  password: 'soko123',
+}
+
+export function subscribeToAdminProfile(callback: (profile: AdminProfileSettings) => void): () => void {
+  const docRef = doc(db, 'systemSettings', 'adminProfile')
+  return onSnapshot(
+    docRef,
+    (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data() as Partial<AdminProfileSettings>
+        callback({
+          displayName: data.displayName || DEFAULT_ADMIN_PROFILE.displayName,
+          role: data.role || DEFAULT_ADMIN_PROFILE.role,
+          username: data.username || DEFAULT_ADMIN_PROFILE.username,
+          password: data.password || DEFAULT_ADMIN_PROFILE.password,
+          updatedAt: data.updatedAt,
+          updatedBy: data.updatedBy,
+        })
+      } else {
+        callback(DEFAULT_ADMIN_PROFILE)
+      }
+    },
+    (err) => {
+      console.error('Error listening to admin profile settings:', err)
+      callback(DEFAULT_ADMIN_PROFILE)
+    }
+  )
+}
+
+export async function saveAdminProfile(profile: AdminProfileSettings): Promise<void> {
+  const docRef = doc(db, 'systemSettings', 'adminProfile')
+  await setDoc(
+    docRef,
+    {
+      ...profile,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  )
+}
+
+export async function verifyAdminLocal(username: string, password: string): Promise<{ success: boolean; token?: string }> {
+  try {
+    const docRef = doc(db, 'systemSettings', 'adminProfile')
+    const docSnap = await getDoc(docRef)
+    let validUsername = DEFAULT_ADMIN_PROFILE.username
+    let validPassword = DEFAULT_ADMIN_PROFILE.password
+
+    if (docSnap.exists()) {
+      const data = docSnap.data()
+      if (data.username) validUsername = data.username
+      if (data.password) validPassword = data.password
+    }
+
+    if (username.trim().toLowerCase() === validUsername.toLowerCase() && password === validPassword) {
+      return { success: true, token: `soko-auth-${btoa(username.trim())}-${Date.now()}` }
+    }
+  } catch (err) {
+    console.error('Firestore verifyAdminLocal error:', err)
   }
+
   return { success: false }
 }
 
