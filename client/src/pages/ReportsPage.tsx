@@ -9,28 +9,25 @@ import {
   RefreshCw,
   ChevronDown,
 } from 'lucide-react'
-import { getStats, listPersonnel } from '../services/firebase'
-import type { Personnel, Stats } from '../types/personnel'
+import { listPersonnel } from '../services/firebase'
+import type { Personnel } from '../types/personnel'
 import { formatDate } from '../utils/format'
 import { useTheme } from '../context/ThemeContext'
 import { RegistrationLinkBanner } from '../components/RegistrationLinkBanner'
+import { getPersonnelYear } from '../utils/yearlyUtils'
 
 export function ReportsPage() {
   const { theme } = useTheme()
   const [personnel, setPersonnel] = useState<Personnel[]>([])
-  const [stats, setStats] = useState<Stats>()
   const [loading, setLoading] = useState(true)
+  const [selectedYear, setSelectedYear] = useState<number | 'ALL'>('ALL')
   const [trendFilter, setTrendFilter] = useState<'This Month' | 'This Week' | 'All Time'>('This Month')
 
   const loadData = async () => {
     setLoading(true)
     try {
-      const [peopleRes, statsRes] = await Promise.all([
-        listPersonnel('', 'ALL'),
-        getStats(),
-      ])
+      const peopleRes = await listPersonnel('', 'ALL')
       setPersonnel(peopleRes.personnel)
-      setStats(statsRes.stats)
     } catch (err) {
       console.error('Failed to load reports data:', err)
     } finally {
@@ -42,16 +39,36 @@ export function ReportsPage() {
     loadData()
   }, [])
 
-  const approvedPct = stats?.totalRegistered
+  const availableYears = useMemo(() => {
+    const yearsSet = new Set<number>([2026, new Date().getFullYear()])
+    personnel.forEach((p) => yearsSet.add(getPersonnelYear(p)))
+    return Array.from(yearsSet).sort((a, b) => b - a)
+  }, [personnel])
+
+  const filteredPersonnel = useMemo(() => {
+    if (selectedYear === 'ALL') return personnel
+    return personnel.filter((p) => getPersonnelYear(p) === Number(selectedYear))
+  }, [personnel, selectedYear])
+
+  const stats = useMemo(() => {
+    const totalRegistered = filteredPersonnel.length
+    const approved = filteredPersonnel.filter((p) => p.status === 'APPROVED').length
+    const entered = filteredPersonnel.filter((p) => p.status === 'ENTERED').length
+    const notYetEntered = filteredPersonnel.filter((p) => p.status !== 'ENTERED').length
+    const rejected = filteredPersonnel.filter((p) => p.status === 'REJECTED').length
+    return { totalRegistered, approved, entered, notYetEntered, rejected }
+  }, [filteredPersonnel])
+
+  const approvedPct = stats.totalRegistered
     ? ((stats.approved / stats.totalRegistered) * 100).toFixed(1)
     : '0.0'
-  const enteredPct = stats?.totalRegistered
+  const enteredPct = stats.totalRegistered
     ? ((stats.entered / stats.totalRegistered) * 100).toFixed(1)
     : '0.0'
-  const notEnteredPct = stats?.totalRegistered
+  const notEnteredPct = stats.totalRegistered
     ? ((stats.notYetEntered / stats.totalRegistered) * 100).toFixed(1)
     : '0.0'
-  const rejectedPct = stats?.totalRegistered
+  const rejectedPct = stats.totalRegistered
     ? ((stats.rejected / stats.totalRegistered) * 100).toFixed(1)
     : '0.0'
 
@@ -66,7 +83,7 @@ export function ReportsPage() {
       'General Headquarters': 0,
     }
 
-    personnel.forEach((p) => {
+    filteredPersonnel.forEach((p) => {
       if (p.exerciseStatus === 'Civilians' || p.armOfService === 'Civilians') {
         counts.Civilians += 1
       } else if (p.armOfService === 'Army') {
@@ -82,7 +99,7 @@ export function ReportsPage() {
       }
     })
 
-    const tot = personnel.length || 1
+    const tot = filteredPersonnel.length || 1
     const rawList = [
       { name: 'Army', count: counts['Army'], color: '#16A34A' },
       { name: 'Navy', count: counts['Navy'], color: '#2563EB' },
@@ -99,11 +116,11 @@ export function ReportsPage() {
         ...item,
         pct: ((item.count / tot) * 100).toFixed(1),
       }))
-  }, [personnel])
+  }, [filteredPersonnel])
 
   // Compute dynamic SVG donut strokeDasharray & offsets
   const donutSegments = useMemo(() => {
-    const tot = personnel.length || 1
+    const tot = filteredPersonnel.length || 1
     let accumulatedPct = 0
 
     return armBreakdown.map((item) => {
@@ -117,7 +134,7 @@ export function ReportsPage() {
         strokeDashoffset,
       }
     })
-  }, [armBreakdown, personnel.length])
+  }, [armBreakdown, filteredPersonnel.length])
 
   // Dynamic Timeline Calculation for Registrations Over Time
   const chartData = useMemo(() => {
@@ -130,7 +147,7 @@ export function ReportsPage() {
         d.setDate(now.getDate() - i)
         const dateStr = d.toISOString().split('T')[0]
         const label = d.toLocaleDateString('en-US', { weekday: 'short' })
-        const count = personnel.filter((p) => {
+        const count = filteredPersonnel.filter((p) => {
           if (!p.registeredAt) return false
           const pDate = new Date(p.registeredAt).toISOString().split('T')[0]
           return pDate === dateStr
@@ -151,7 +168,7 @@ export function ReportsPage() {
         const dateLabel = `${now.toLocaleDateString('en-US', { month: 'short' })} ${day}`
         const dayEnd = Math.min(day + step - 1, daysInMonth)
 
-        const count = personnel.filter((p) => {
+        const count = filteredPersonnel.filter((p) => {
           if (!p.registeredAt) return false
           const pDate = new Date(p.registeredAt)
           return pDate.getFullYear() === year && pDate.getMonth() === month && pDate.getDate() <= dayEnd
@@ -163,7 +180,7 @@ export function ReportsPage() {
       return { labels: intervals.map((d) => d.label), points, max: maxVal }
     } else {
       // All Time cumulative timeline
-      if (personnel.length === 0) {
+      if (filteredPersonnel.length === 0) {
         return {
           labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
           points: [0, 0, 0, 0, 0, 0],
@@ -171,7 +188,7 @@ export function ReportsPage() {
         }
       }
 
-      const sorted = [...personnel].sort(
+      const sorted = [...filteredPersonnel].sort(
         (a, b) => new Date(a.registeredAt || 0).getTime() - new Date(b.registeredAt || 0).getTime()
       )
 
@@ -194,7 +211,7 @@ export function ReportsPage() {
       const maxVal = Math.max(...points, 5)
       return { labels, points, max: maxVal }
     }
-  }, [personnel, trendFilter])
+  }, [filteredPersonnel, trendFilter])
 
   // Convert timeline points to smooth SVG bezier path
   const svgPath = useMemo(() => {
@@ -223,11 +240,11 @@ export function ReportsPage() {
   }, [chartData])
 
   const recentEntries = useMemo(() => {
-    return personnel
+    return filteredPersonnel
       .filter((p) => p.status === 'ENTERED')
       .sort((a, b) => new Date(b.enteredAt || b.registeredAt).getTime() - new Date(a.enteredAt || a.registeredAt).getTime())
       .slice(0, 8)
-  }, [personnel])
+  }, [filteredPersonnel])
 
   const isDark = theme === 'dark'
 
@@ -236,7 +253,7 @@ export function ReportsPage() {
       isDark ? 'bg-[#000000] text-[#F8FAFC]' : 'bg-[#F8FAFC] text-slate-900'
     }`}>
       {/* ── Page Header ── */}
-      <div className={`flex items-center justify-between border-b pb-5 ${
+      <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-5 ${
         isDark ? 'border-zinc-800' : 'border-slate-200/80'
       }`}>
         <div>
@@ -250,19 +267,39 @@ export function ReportsPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={loadData}
-          disabled={loading}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold transition cursor-pointer disabled:opacity-50 ${
-            isDark
-              ? 'bg-[#121215] border-zinc-800 text-slate-100 hover:bg-zinc-800'
-              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 shadow-2xs'
-          }`}
-        >
-          <RefreshCw size={14} className={loading ? 'animate-spin text-emerald-500' : 'text-emerald-500'} />
-          <span>Refresh Reports</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          {/* Year Selector Dropdown */}
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
+            className={`border text-xs font-bold rounded-xl px-3 py-2.5 cursor-pointer focus:outline-none transition ${
+              isDark
+                ? 'bg-[#121215] border-zinc-800 text-emerald-400 focus:border-emerald-500'
+                : 'bg-white border-slate-200 text-slate-800 focus:border-slate-400 shadow-2xs'
+            }`}
+          >
+            <option value="ALL">📅 All Years</option>
+            {availableYears.map((yr) => (
+              <option key={yr} value={yr}>
+                Exercise Year {yr}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            onClick={loadData}
+            disabled={loading}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold transition cursor-pointer disabled:opacity-50 ${
+              isDark
+                ? 'bg-[#121215] border-zinc-800 text-slate-100 hover:bg-zinc-800'
+                : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 shadow-2xs'
+            }`}
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin text-emerald-500' : 'text-emerald-500'} />
+            <span>Refresh Reports</span>
+          </button>
+        </div>
       </div>
 
       {/* ── Public Registration Link Banner ── */}

@@ -16,6 +16,7 @@ import { StatusBadge } from '../components/StatusBadge'
 import { RegistrationLinkBanner } from '../components/RegistrationLinkBanner'
 import { formatDate } from '../utils/format'
 import { useTheme } from '../context/ThemeContext'
+import { getPersonnelYear } from '../utils/yearlyUtils'
 
 type CategoryTab = 'Army' | 'Navy' | 'Air Force' | 'DCS' | 'Civilians'
 
@@ -80,6 +81,7 @@ export function AdminRegistrationsPage() {
   const [personnel, setPersonnel] = useState<Personnel[]>([])
   const [activeTab, setActiveTab] = useState<CategoryTab>('Army')
   const [search, setSearch] = useState('')
+  const [selectedYear, setSelectedYear] = useState<number | 'ALL'>('ALL')
   const [loading, setLoading] = useState(true)
 
   const loadData = async () => {
@@ -98,6 +100,17 @@ export function AdminRegistrationsPage() {
     loadData()
   }, [])
 
+  const availableYears = useMemo(() => {
+    const yearsSet = new Set<number>([2026, new Date().getFullYear()])
+    personnel.forEach((p) => yearsSet.add(getPersonnelYear(p)))
+    return Array.from(yearsSet).sort((a, b) => b - a)
+  }, [personnel])
+
+  const yearFilteredPersonnel = useMemo(() => {
+    if (selectedYear === 'ALL') return personnel
+    return personnel.filter((p) => getPersonnelYear(p) === Number(selectedYear))
+  }, [personnel, selectedYear])
+
   // Calculate counts per arm/civilian
   const categoryCounts = useMemo(() => {
     const counts: Record<CategoryTab, number> = {
@@ -108,7 +121,7 @@ export function AdminRegistrationsPage() {
       Civilians: 0,
     }
 
-    personnel.forEach((p) => {
+    yearFilteredPersonnel.forEach((p) => {
       if (p.exerciseStatus === 'Civilians' || p.armOfService === 'Civilians') {
         counts.Civilians += 1
       } else if (p.armOfService === 'Army') {
@@ -125,11 +138,11 @@ export function AdminRegistrationsPage() {
     })
 
     return counts
-  }, [personnel])
+  }, [yearFilteredPersonnel])
 
   // Filter personnel for active category & search string
   const filteredPersonnel = useMemo(() => {
-    return personnel.filter((p) => {
+    return yearFilteredPersonnel.filter((p) => {
       let categoryMatch = false
       if (activeTab === 'Civilians') {
         categoryMatch = p.exerciseStatus === 'Civilians' || p.armOfService === 'Civilians'
@@ -151,7 +164,7 @@ export function AdminRegistrationsPage() {
         p.phone.includes(q)
       )
     })
-  }, [personnel, activeTab, search])
+  }, [yearFilteredPersonnel, activeTab, search])
 
   const isDark = theme === 'dark'
 
@@ -258,7 +271,7 @@ export function AdminRegistrationsPage() {
         <div className={`p-4 border-b flex flex-col sm:flex-row items-center justify-between gap-3 ${
           isDark ? 'border-zinc-800 bg-[#000000]' : 'border-slate-200/80 bg-slate-50/50'
         }`}>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <span className={`text-xs font-black uppercase tracking-wider ${
               isDark ? 'text-emerald-400' : 'text-slate-900'
             }`}>
@@ -266,20 +279,40 @@ export function AdminRegistrationsPage() {
             </span>
           </div>
 
-          <label className="relative block w-full sm:w-80">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-500" size={15} />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={`Search ${activeTab} records...`}
-              className={`w-full border text-xs rounded-xl pl-9 pr-4 py-2.5 focus:outline-none transition ${
+          <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full sm:w-auto">
+            {/* Year Selector Dropdown */}
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
+              className={`w-full sm:w-auto border text-xs font-bold rounded-xl px-3 py-2.5 cursor-pointer focus:outline-none transition ${
                 isDark
-                  ? 'bg-[#121215] border-zinc-700 text-white placeholder-slate-400 focus:border-emerald-500'
-                  : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:border-slate-400'
+                  ? 'bg-[#121215] border-zinc-700 text-emerald-400 focus:border-emerald-500'
+                  : 'bg-white border-slate-200 text-slate-800 focus:border-slate-400'
               }`}
-            />
-          </label>
+            >
+              <option value="ALL">📅 All Years</option>
+              {availableYears.map((yr) => (
+                <option key={yr} value={yr}>
+                  Year {yr}
+                </option>
+              ))}
+            </select>
+
+            <label className="relative block w-full sm:w-80">
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-500" size={15} />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={`Search ${activeTab} records...`}
+                className={`w-full border text-xs rounded-xl pl-9 pr-4 py-2.5 focus:outline-none transition ${
+                  isDark
+                    ? 'bg-[#121215] border-zinc-700 text-white placeholder-slate-400 focus:border-emerald-500'
+                    : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:border-slate-400'
+                }`}
+              />
+            </label>
+          </div>
         </div>
 
         {/* Table Content */}
@@ -307,6 +340,7 @@ export function AdminRegistrationsPage() {
                 <tr>
                   <th className="py-3.5 px-6 font-bold">Name</th>
                   <th className="py-3.5 px-6 font-bold">Service No.</th>
+                  <th className="py-3.5 px-6 font-bold">Year</th>
                   <th className="py-3.5 px-6 font-bold">Exercise Status</th>
                   <th className="py-3.5 px-6 font-bold">Rank / Designation</th>
                   <th className="py-3.5 px-6 font-bold">Unit / Dept</th>
@@ -325,6 +359,9 @@ export function AdminRegistrationsPage() {
                     </td>
                     <td className={`py-3.5 px-6 font-mono font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                       {person.serviceNumber}
+                    </td>
+                    <td className="py-3.5 px-6 font-mono font-extrabold text-emerald-500">
+                      {getPersonnelYear(person)}
                     </td>
                     <td className="py-3.5 px-6">
                       <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${

@@ -12,7 +12,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['gaf.png', 'favicon.svg'],
       manifest: {
-        name: 'EXERCISE RESOLUTE SOLUTION — Entry Registration',
+        name: 'EXERCISE RESOLUTE SYNERGY — Entry Registration',
         short_name: 'Resolute Entry',
         description: 'Military Entry Control and Personnel Registration System',
         theme_color: '#0A1128',

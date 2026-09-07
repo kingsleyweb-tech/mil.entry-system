@@ -16,15 +16,11 @@ import {
 import { StatusBadge } from '../components/StatusBadge'
 import { EditPersonnelModal } from '../components/EditPersonnelModal'
 import { ImportModal } from '../components/ImportModal'
-import {
-  listPersonnel,
-  bulkCheckInPersonnel,
-  deletePersonnel,
-  exportAllPersonnel,
-} from '../services/firebase'
+import { listPersonnel, bulkCheckInPersonnel, deletePersonnel, exportAllPersonnel } from '../services/firebase'
 import type { Personnel, PersonnelStatus } from '../types/personnel'
 import { formatDate } from '../utils/format'
 import { useTheme } from '../context/ThemeContext'
+import { getPersonnelYear } from '../utils/yearlyUtils'
 
 const filters: Array<PersonnelStatus | 'ALL'> = ['ALL', 'REGISTERED', 'APPROVED', 'ENTERED', 'REJECTED']
 
@@ -33,6 +29,7 @@ export function DashboardPage() {
   const [personnel, setPersonnel] = useState<Personnel[]>([])
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<PersonnelStatus | 'ALL'>('ALL')
+  const [selectedYear, setSelectedYear] = useState<number | 'ALL'>('ALL')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -208,6 +205,17 @@ export function DashboardPage() {
     return () => window.clearTimeout(timer)
   }, [load])
 
+  const availableYears = useMemo(() => {
+    const yearsSet = new Set<number>([2026, new Date().getFullYear()])
+    personnel.forEach((p) => yearsSet.add(getPersonnelYear(p)))
+    return Array.from(yearsSet).sort((a, b) => b - a)
+  }, [personnel])
+
+  const filteredPersonnel = useMemo(() => {
+    if (selectedYear === 'ALL') return personnel
+    return personnel.filter((p) => getPersonnelYear(p) === Number(selectedYear))
+  }, [personnel, selectedYear])
+
   const isDark = theme === 'dark'
 
   return (
@@ -346,7 +354,25 @@ export function DashboardPage() {
             )}
           </div>
 
-          <div className="flex gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+          <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+            {/* Year Selector Dropdown */}
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
+              className={`transition duration-150 border px-3 py-1.5 text-xs font-bold rounded-xl cursor-pointer ${
+                isDark
+                  ? 'bg-[#121215] border-zinc-800 text-emerald-400 focus:border-emerald-500'
+                  : 'bg-white border-slate-200 text-slate-800 focus:border-slate-400 shadow-2xs'
+              }`}
+            >
+              <option value="ALL">📅 All Years</option>
+              {availableYears.map((yr) => (
+                <option key={yr} value={yr}>
+                  Exercise Year {yr}
+                </option>
+              ))}
+            </select>
+
             {filters.map((filter) => (
               <button
                 key={filter}
@@ -362,7 +388,7 @@ export function DashboardPage() {
                 type="button"
                 onClick={() => setStatus(filter)}
               >
-                {filter === 'ALL' ? 'All' : filter === 'REGISTERED' ? 'Yet to Confirm Entry' : filter}
+                {filter === 'ALL' ? 'All Statuses' : filter === 'REGISTERED' ? 'Yet to Confirm Entry' : filter}
               </button>
             ))}
           </div>
@@ -409,16 +435,16 @@ export function DashboardPage() {
             <Loader2 className="animate-spin text-emerald-500" size={20} aria-hidden="true" />
             Synchronizing personnel records…
           </div>
-        ) : personnel.length === 0 ? (
+        ) : filteredPersonnel.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-16 text-center">
             <Database size={40} className="mb-3 text-slate-500" aria-hidden="true" />
             <p className={`font-bold text-xs ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-              {search.trim() ? `No matching records found for "${search}"` : 'No personnel records found.'}
+              {search.trim() ? `No matching records found for "${search}"` : 'No personnel records found for selected filters.'}
             </p>
             <p className="mt-1 text-[11px] text-slate-400 max-w-sm leading-normal">
               {search.trim()
                 ? 'Check spelling, check code format, or search for another term.'
-                : 'Share the registration link so personnel can register.'}
+                : 'Share the registration link or switch year filter to view personnel.'}
             </p>
           </div>
         ) : (
@@ -434,16 +460,16 @@ export function DashboardPage() {
                     <input
                       type="checkbox"
                       className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer h-4 w-4"
-                      disabled={!personnel.some((p) => p.status !== 'ENTERED' && p.status !== 'REJECTED')}
+                      disabled={!filteredPersonnel.some((p) => p.status !== 'ENTERED' && p.status !== 'REJECTED')}
                       checked={
-                        personnel.length > 0 &&
-                        personnel
+                        filteredPersonnel.length > 0 &&
+                        filteredPersonnel
                           .filter((p) => p.status !== 'ENTERED' && p.status !== 'REJECTED')
                           .every((p) => selectedIds.includes(p.id))
                       }
                       onChange={(e) => {
                         if (e.target.checked) {
-                          const eligibleIds = personnel
+                          const eligibleIds = filteredPersonnel
                             .filter((p) => p.status !== 'ENTERED' && p.status !== 'REJECTED')
                             .map((p) => p.id)
                           setSelectedIds(eligibleIds)
@@ -455,6 +481,7 @@ export function DashboardPage() {
                   </th>
                   <th className="px-6 py-3.5 font-bold">Name</th>
                   <th className="px-6 py-3.5 font-bold">Service No.</th>
+                  <th className="px-6 py-3.5 font-bold">Year</th>
                   <th className="px-6 py-3.5 font-bold">Exercise Status</th>
                   <th className="px-6 py-3.5 font-bold">Arm</th>
                   <th className="px-6 py-3.5 font-bold">Rank</th>
@@ -470,7 +497,7 @@ export function DashboardPage() {
               <tbody className={`divide-y ${
                 isDark ? 'divide-zinc-800/90 bg-[#0A0A0C]' : 'divide-slate-100 bg-white'
               }`}>
-                {personnel.map((person) => (
+                {filteredPersonnel.map((person) => (
                   <tr key={person.id} className={`transition duration-75 ${
                     isDark ? 'hover:bg-[#121215]' : 'hover:bg-slate-50/60'
                   }`}>
@@ -503,6 +530,9 @@ export function DashboardPage() {
                       isDark ? 'text-slate-200' : 'text-slate-700'
                     }`}>
                       {person.serviceNumber}
+                    </td>
+                    <td className="px-6 py-3.5 font-mono text-xs font-extrabold text-emerald-500">
+                      {getPersonnelYear(person)}
                     </td>
                     <td className="px-6 py-3.5 text-xs font-semibold">
                       {person.exerciseStatus ? (

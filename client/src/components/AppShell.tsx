@@ -167,7 +167,7 @@ export function AppShell({ children }: Props) {
           <img src={gafLogo} alt="GAF Logo" className="w-8 h-8 object-contain" />
           <div>
             <div className="text-xs font-black tracking-wider uppercase text-white">
-              EXERCISE RESOLUTE SOLUTION
+              EXERCISE RESOLUTE SYNERGY
             </div>
             <div className="text-[9px] text-slate-400 font-semibold tracking-widest uppercase">
               PERSONNEL REGISTRATION SYSTEM
@@ -455,7 +455,7 @@ export function AppShell({ children }: Props) {
                 </div>
                 <div>
                   <h1 className="text-xs font-black text-white tracking-wider uppercase leading-snug">
-                    EXERCISE<br />RESOLUTE SOLUTION
+                    EXERCISE<br />RESOLUTE SYNERGY
                   </h1>
                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
                     PERSONNEL SYSTEM
